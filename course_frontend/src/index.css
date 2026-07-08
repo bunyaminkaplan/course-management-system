@@ -1,0 +1,250 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  font-family: 'Outfit', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+
+  /* HSL Color System */
+  /* Light Mode Default */
+  --bg-primary: 210 20% 98%;      /* #f8fafc */
+  --bg-secondary: 0 0% 100%;       /* #ffffff */
+  --bg-tertiary: 210 20% 95%;      /* #f1f5f9 */
+  --text-primary: 220 40% 10%;     /* #0f172a */
+  --text-secondary: 215 15% 40%;   /* #475569 */
+  --text-tertiary: 215 15% 60%;    /* #94a3b8 */
+  
+  --primary: 243 75% 59%;          /* Indigo 600 */
+  --primary-hover: 244 75% 50%;
+  --primary-light: 243 100% 96%;
+  
+  --success: 142 70% 45%;          /* Emerald 600 */
+  --success-light: 142 80% 95%;
+  --warning: 38 90% 50%;           /* Amber 600 */
+  --warning-light: 38 100% 96%;
+  --danger: 0 84% 60%;             /* Rose 600 */
+  --danger-light: 0 100% 96%;
+  
+  --border: 215 20% 90%;
+  --shadow: 220 40% 2% / 0.05;
+  --glass-bg: 0 0% 100% / 0.7;
+  --glass-border: 0 0% 100% / 0.5;
+  
+  --sidebar-bg: 222 47% 11%;       /* Slate 900 */
+  --sidebar-text: 210 40% 96%;     /* Slate 100 */
+  --sidebar-hover: 217 33% 17%;
+  
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  
+  accent-color: hsl(var(--primary));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark Mode Overrides */
+    --bg-primary: 224 71% 4%;        /* Slate 950 */
+    --bg-secondary: 222 47% 7%;      /* Slate 900 */
+    --bg-tertiary: 217 33% 12%;      /* Slate 800 */
+    --text-primary: 210 40% 98%;     /* Slate 50 */
+    --text-secondary: 215 20% 75%;   /* Slate 300 */
+    --text-tertiary: 215 15% 50%;    /* Slate 500 */
+    
+    --primary: 245 100% 70%;         /* Vibrant purple-blue */
+    --primary-hover: 245 100% 75%;
+    --primary-light: 245 100% 15%;
+    
+    --success: 142 70% 40%;
+    --success-light: 142 80% 10%;
+    --warning: 38 90% 45%;
+    --warning-light: 38 100% 10%;
+    --danger: 0 84% 55%;
+    --danger-light: 0 100% 10%;
+    
+    --border: 217 33% 15%;
+    --shadow: 0 0% 0% / 0.3;
+    --glass-bg: 222 47% 7% / 0.7;
+    --glass-border: 217 33% 15% / 0.5;
+    
+    --sidebar-bg: 224 71% 4%;
+    --sidebar-text: 210 40% 98%;
+    --sidebar-hover: 217 33% 10%;
+  }
+}
+
+/* Reset and Global Setup */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+body {
+  background-color: hsl(var(--bg-primary));
+  color: hsl(var(--text-primary));
+  min-height: 100vh;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbars */
+html {
+  scrollbar-color: hsl(var(--text-tertiary)) hsl(var(--bg-primary));
+}
+
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--bg-primary));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--text-tertiary));
+    border-radius: 4px;
+  }
+}
+
+/* Typography and Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: hsl(var(--text-primary));
+}
+
+a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+a:hover {
+  color: hsl(var(--primary-hover));
+}
+
+/* Buttons and Inputs Styling */
+button, .btn {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all var(--transition-fast);
+}
+
+button.primary, .btn.primary {
+  background-color: hsl(var(--primary));
+  color: #ffffff;
+}
+button.primary:hover, .btn.primary:hover {
+  background-color: hsl(var(--primary-hover));
+  transform: translateY(-1px);
+}
+button.primary:active, .btn.primary:active {
+  transform: translateY(0);
+}
+
+button.secondary, .btn.secondary {
+  background-color: hsl(var(--bg-tertiary));
+  color: hsl(var(--text-primary));
+  border: 1px solid hsl(var(--border));
+}
+button.secondary:hover, .btn.secondary:hover {
+  background-color: hsl(var(--border));
+}
+
+button.danger, .btn.danger {
+  background-color: hsl(var(--danger));
+  color: #ffffff;
+}
+button.danger:hover, .btn.danger:hover {
+  background-color: hsl(var(--danger-light) / 0.9);
+}
+
+button:disabled, .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--bg-secondary));
+  color: hsl(var(--text-primary));
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: hsl(var(--text-secondary));
+  margin-bottom: 0.35rem;
+  display: block;
+}
+
+/* Glassmorphic Panel/Card Layouts */
+.card {
+  background: hsl(var(--bg-secondary));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px -2px hsl(var(--shadow));
+}
+
+.glass {
+  background: hsl(var(--glass-bg));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--glass-border));
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px 0 hsl(var(--shadow));
+}
+
+/* Common Layouts and Flex/Grid classes */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+.grid {
+  display: grid;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade {
+  animation: fadeIn var(--transition-normal) forwards;
+}

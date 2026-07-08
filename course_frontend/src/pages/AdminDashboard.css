@@ -1,0 +1,165 @@
+.admin-dashboard {
+  width: 100%;
+}
+
+.admin-layout {
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.left-panel {
+  gap: 1.5rem;
+}
+
+.right-panel {
+  gap: 1.25rem;
+}
+
+/* Admin Tables styling */
+.users-table-card, .schedules-table-card {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-table th {
+  background-color: hsl(var(--bg-tertiary));
+  color: hsl(var(--text-secondary));
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.admin-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 0.95rem;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Role Badges */
+.role-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+
+.role-badge.admin {
+  background-color: hsl(var(--danger-light));
+  color: hsl(var(--danger));
+}
+
+.role-badge.instructor {
+  background-color: hsl(var(--primary-light));
+  color: hsl(var(--primary));
+}
+
+.role-badge.student {
+  background-color: hsl(var(--success-light));
+  color: hsl(var(--success));
+}
+
+/* Admin Forms */
+.admin-form {
+  gap: 1.25rem;
+}
+
+.grid-2-col {
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Classroom Manage Cards Grid */
+.classrooms-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.class-manage-card {
+  gap: 0.75rem;
+  border: 1px solid hsl(var(--border));
+}
+
+.class-manage-card.selected {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+
+.class-header {
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.class-header h3 {
+  font-size: 1.1rem;
+}
+
+.class-header .actions {
+  gap: 0.4rem;
+}
+
+.class-summary {
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: hsl(var(--text-secondary));
+  background-color: hsl(var(--bg-tertiary));
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Classroom Member Assignment Panel */
+.classroom-member-panel {
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.member-sections {
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.member-section h4 {
+  font-size: 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.member-list {
+  gap: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.member-row {
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .admin-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .member-sections {
+    grid-template-columns: 1fr;
+  }
+}

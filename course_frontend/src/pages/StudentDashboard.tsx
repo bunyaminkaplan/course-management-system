@@ -1,0 +1,484 @@
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import { 
+  Bell, 
+  FileText, 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  Calendar, 
+  BookOpen, 
+  Upload, 
+  Award,
+  AlertCircle
+} from 'lucide-react';
+import './StudentDashboard.css';
+
+interface FeedItem {
+  id: number;
+  type: 'ANNOUNCEMENT' | 'ASSIGNMENT';
+  title: string;
+  content: string;
+  classroom_id: number;
+  classroom_name: string;
+  created_at: string;
+  deadline?: string | null;
+  status?: 'PENDING' | 'SUBMITTED' | 'OVERDUE' | null;
+}
+
+interface StudentAssignment {
+  id: number;
+  assignment: number;
+  assignment_details: {
+    id: number;
+    classroom: number;
+    classroom_name: string;
+    title: string;
+    description: string;
+    deadline: string;
+    created_at: string;
+  };
+  student: number;
+  status: 'PENDING' | 'SUBMITTED' | 'OVERDUE';
+  file_url: string | null;
+  grade: string | null;
+  submitted_at: string | null;
+}
+
+interface Classroom {
+  id: number;
+  name: string;
+}
+
+interface Schedule {
+  id: number;
+  classroom: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
+interface Attendance {
+  id: number;
+  session: number;
+  session_details?: {
+    date: string;
+    classroom_name: string;
+  };
+  student: number;
+  is_present: boolean;
+}
+
+interface Session {
+  id: number;
+  classroom: number;
+  date: string;
+  status: 'SCHEDULED' | 'READY' | 'ACTIVE' | 'COMPLETED' | 'MISSED';
+}
+
+export const StudentDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // States
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Submit Assignment Modal State
+  const [submitModalOpen, setSubmitModalOpen] = useState(false);
+  const [selectedSA, setSelectedSA] = useState<StudentAssignment | null>(null);
+  const [fileUrl, setFileUrl] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Filter Feed State
+  const [feedFilter, setFeedFilter] = useState<'ALL' | 'ANNOUNCEMENT' | 'ASSIGNMENT'>('ALL');
+
+  const fetchData = async () => {
+    if (!user) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Fetch Feed
+      const feedData = await api.get('/api/feed/');
+      setFeed(feedData);
+
+      // 2. Fetch Assignments & filter for current student
+      const assData: StudentAssignment[] = await api.get('/api/student-assignments/');
+      const studentAss = assData.filter((sa) => sa.student === user.id);
+      setAssignments(studentAss);
+
+      // 3. Fetch Classrooms student is enrolled in
+      const classData: Classroom[] = await api.get('/api/classrooms/');
+      setClassrooms(classData);
+
+      // 4. Fetch Schedules
+      const schedData: Schedule[] = await api.get('/api/schedules/');
+      // Filter schedules of classrooms this student is enrolled in
+      const enrolledClassIds = classData.map((c) => c.id);
+      const studentSched = schedData.filter((s) => enrolledClassIds.includes(s.classroom));
+      setSchedules(studentSched);
+
+      // 5. Fetch Attendances & Sessions
+      const attData: Attendance[] = await api.get('/api/attendances/');
+      const studentAtt = attData.filter((a) => a.student === user.id);
+      
+      const sessData: Session[] = await api.get('/api/sessions/');
+
+      // Map session details to attendance
+      const mappedAtt = studentAtt.map((att) => {
+        const sess = sessData.find((s) => s.id === att.session);
+        const cl = classData.find((c) => c.id === sess?.classroom);
+        return {
+          ...att,
+          session_details: {
+            date: sess?.date || '',
+            classroom_name: cl?.name || 'Bilinmeyen Ders',
+          }
+        };
+      });
+      setAttendances(mappedAtt);
+
+    } catch (err: any) {
+      setError(err.message || 'Veriler yüklenirken bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [user]);
+
+  const handleOpenSubmitModal = (sa: StudentAssignment) => {
+    setSelectedSA(sa);
+    setFileUrl(sa.file_url || '');
+    setSubmitModalOpen(true);
+  };
+
+  const handleCloseSubmitModal = () => {
+    setSelectedSA(null);
+    setFileUrl('');
+    setSubmitModalOpen(false);
+  };
+
+  const handleSubmitAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSA || !fileUrl.trim()) return;
+
+    setSubmitting(true);
+    try {
+      const updated = await api.patch(`/api/student-assignments/${selectedSA.id}/`, {
+        file_url: fileUrl,
+        status: 'SUBMITTED',
+        submitted_at: new Date().toISOString()
+      });
+
+      // Update state
+      setAssignments(assignments.map((sa) => sa.id === selectedSA.id ? updated : sa));
+      // Refresh feed too since it shows status
+      const updatedFeed = feed.map((item) => 
+        (item.type === 'ASSIGNMENT' && item.id === selectedSA.assignment) 
+          ? { ...item, status: 'SUBMITTED' as const } 
+          : item
+      );
+      setFeed(updatedFeed);
+      
+      handleCloseSubmitModal();
+      // Reload everything to get clean synced states
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Ödev teslim edilirken hata oluştu.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getDayOfWeekName = (dayNum: number) => {
+    const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+    return days[dayNum] || 'Bilinmeyen Gün';
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return <span className="status-badge pending flex-row"><Clock size={14} /> Bekliyor</span>;
+      case 'SUBMITTED':
+        return <span className="status-badge submitted flex-row"><CheckCircle2 size={14} /> Teslim Edildi</span>;
+      case 'OVERDUE':
+        return <span className="status-badge overdue flex-row"><XCircle size={14} /> Gecikmiş</span>;
+      default:
+        return <span className="status-badge">{status}</span>;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="loading-container flex-col">
+        <div className="spinner"></div>
+        <p>Verileriniz yükleniyor, lütfen bekleyin...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container card flex-row">
+        <AlertCircle size={24} className="danger-text" />
+        <div>
+          <h3>Veri Yükleme Hatası</h3>
+          <p>{error}</p>
+          <button className="primary" onClick={fetchData} style={{ marginTop: '0.75rem' }}>Tekrar Dene</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Determine which section to show based on routing path
+  const activePath = location.pathname;
+
+  return (
+    <div className="student-dashboard">
+      {/* 1. Birleştirilmiş Pano (Feed) Section */}
+      {activePath === '/' && (
+        <section className="dashboard-section animate-fade">
+          <div className="section-header flex-row">
+            <div>
+              <h2>Birleştirilmiş Pano</h2>
+              <p>Duyurular ve güncel ödevlerinizin tek bir akışı</p>
+            </div>
+            <div className="filter-tabs flex-row">
+              <button 
+                className={`filter-tab ${feedFilter === 'ALL' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('ALL')}
+              >
+                Tümü
+              </button>
+              <button 
+                className={`filter-tab ${feedFilter === 'ANNOUNCEMENT' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('ANNOUNCEMENT')}
+              >
+                Duyurular
+              </button>
+              <button 
+                className={`filter-tab ${feedFilter === 'ASSIGNMENT' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('ASSIGNMENT')}
+              >
+                Ödevler
+              </button>
+            </div>
+          </div>
+
+          <div className="feed-list flex-col">
+            {feed
+              .filter(item => feedFilter === 'ALL' || item.type === feedFilter)
+              .map((item, idx) => {
+                const isAnn = item.type === 'ANNOUNCEMENT';
+                return (
+                  <div key={`${item.type}-${item.id}-${idx}`} className="feed-card card animate-fade">
+                    <div className="feed-card-header flex-row">
+                      <span className={`type-tag ${isAnn ? 'announcement' : 'assignment'}`}>
+                        {isAnn ? <Bell size={14} /> : <FileText size={14} />}
+                        {isAnn ? 'Duyuru' : 'Ödev'}
+                      </span>
+                      <span className="classroom-tag flex-row">
+                        <BookOpen size={14} /> {item.classroom_name}
+                      </span>
+                      <span className="date-tag">
+                        {new Date(item.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+
+                    <h3 className="feed-card-title">{item.title}</h3>
+                    <p className="feed-card-content">{item.content}</p>
+
+                    {!isAnn && item.deadline && (
+                      <div className="feed-card-footer flex-row">
+                        <div className="deadline flex-row">
+                          <Calendar size={14} />
+                          <span>Son Teslim: {new Date(item.deadline).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        {item.status && getStatusBadge(item.status)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            {feed.length === 0 && (
+              <div className="empty-state card text-center">
+                <Bell size={48} className="empty-icon" />
+                <h3>Pano Temiz</h3>
+                <p>Şu an için sınıfınızda paylaşılan herhangi bir duyuru veya ödev bulunmamaktadır.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 2. Ödevler & Teslimler Section */}
+      {activePath === '/assignments' && (
+        <section className="dashboard-section animate-fade">
+          <div className="section-header">
+            <h2>Ödevlerim ve Teslimler</h2>
+            <p>Atandığınız ödevlerin listesi ve teslim durumları</p>
+          </div>
+
+          <div className="assignments-grid grid">
+            {assignments.map((sa) => (
+              <div key={sa.id} className="assignment-card card flex-col">
+                <div className="assignment-card-header flex-row">
+                  <span className="class-name">{sa.assignment_details.classroom_name}</span>
+                  {getStatusBadge(sa.status)}
+                </div>
+
+                <h3 className="assignment-title">{sa.assignment_details.title}</h3>
+                <p className="assignment-desc">{sa.assignment_details.description}</p>
+
+                <div className="assignment-details-list flex-col">
+                  <div className="detail-item flex-row">
+                    <Calendar size={16} />
+                    <span>Son Gün: {new Date(sa.assignment_details.deadline).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  {sa.submitted_at && (
+                    <div className="detail-item flex-row">
+                      <CheckCircle2 size={16} className="success-text" />
+                      <span>Teslim: {new Date(sa.submitted_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  )}
+                  {sa.grade !== null && (
+                    <div className="detail-item grade-item flex-row">
+                      <Award size={16} className="primary-text" />
+                      <span>Not: <strong>{sa.grade} / 100</strong></span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="assignment-actions">
+                  {sa.status !== 'OVERDUE' && (
+                    <button 
+                      className={`primary ${sa.status === 'SUBMITTED' ? 'secondary' : ''}`}
+                      onClick={() => handleOpenSubmitModal(sa)}
+                    >
+                      <Upload size={16} />
+                      {sa.status === 'SUBMITTED' ? 'Teslimi Güncelle' : 'Ödev Yükle'}
+                    </button>
+                  )}
+                  {sa.status === 'OVERDUE' && (
+                    <button className="secondary" disabled>
+                      Teslim Süresi Geçti
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {assignments.length === 0 && (
+              <div className="empty-state card text-center" style={{ gridColumn: '1 / -1' }}>
+                <FileText size={48} className="empty-icon" />
+                <h3>Ödeviniz Yok</h3>
+                <p>Şu ana kadar size atanmış aktif bir ödev bulunmamaktadır.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 3. Ders Programı & Yoklama Section */}
+      {activePath === '/attendance' && (
+        <section className="dashboard-section animate-fade">
+          <div className="attendance-grid grid">
+            
+            {/* Weekly Schedule */}
+            <div className="schedule-panel card flex-col">
+              <h3 className="panel-title flex-row"><Calendar size={20} /> Haftalık Ders Programı</h3>
+              <div className="schedule-list flex-col">
+                {schedules.map((s) => {
+                  const clName = classrooms.find((c) => c.id === s.classroom)?.name || 'Ders';
+                  return (
+                    <div key={s.id} className="schedule-item flex-row">
+                      <div className="day-badge">{getDayOfWeekName(s.day_of_week)}</div>
+                      <div className="sched-info">
+                        <h4>{clName}</h4>
+                        <p>{s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {schedules.length === 0 && (
+                  <p className="empty-text">Ders programınız bulunmamaktadır.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Attendance History */}
+            <div className="attendance-panel card flex-col">
+              <h3 className="panel-title flex-row"><CheckCircle2 size={20} /> Yoklama Geçmişi</h3>
+              <div className="attendance-list flex-col">
+                {attendances.map((att) => (
+                  <div key={att.id} className="attendance-item flex-row">
+                    <div className="att-info">
+                      <h4>{att.session_details?.classroom_name}</h4>
+                      <p>{att.session_details?.date ? new Date(att.session_details.date).toLocaleDateString('tr-TR') : ''}</p>
+                    </div>
+                    <div className="att-status">
+                      {att.is_present ? (
+                        <span className="present-badge flex-row"><CheckCircle2 size={14} /> Derste</span>
+                      ) : (
+                        <span className="absent-badge flex-row"><XCircle size={14} /> Devamsız</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {attendances.length === 0 && (
+                  <p className="empty-text">Henüz işlenmiş bir ders yoklama kaydınız bulunmamaktadır.</p>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </section>
+      )}
+
+      {/* Submit Assignment Modal */}
+      {submitModalOpen && selectedSA && (
+        <div className="modal-overlay flex-row animate-fade" onClick={handleCloseSubmitModal}>
+          <div className="modal-card card glass animate-fade" onClick={(e) => e.stopPropagation()}>
+            <h3>Ödev Teslim Et</h3>
+            <p className="modal-subtitle">{selectedSA.assignment_details.title}</p>
+            
+            <form onSubmit={handleSubmitAssignment} className="modal-form flex-col">
+              <div className="input-group">
+                <label htmlFor="file-url">Dosya Linki (URL)</label>
+                <input
+                  id="file-url"
+                  type="url"
+                  placeholder="https://drive.google.com/file/... veya dosya linkiniz"
+                  value={fileUrl}
+                  onChange={(e) => setFileUrl(e.target.value)}
+                  disabled={submitting}
+                  required
+                />
+              </div>
+
+              <div className="modal-actions flex-row">
+                <button type="button" className="secondary" onClick={handleCloseSubmitModal} disabled={submitting}>
+                  İptal
+                </button>
+                <button type="submit" className="primary" disabled={submitting}>
+                  {submitting ? 'Gönderiliyor...' : 'Ödevi Gönder'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+export default StudentDashboard;

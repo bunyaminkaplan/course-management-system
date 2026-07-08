@@ -1,0 +1,295 @@
+.instructor-dashboard {
+  width: 100%;
+}
+
+.overview-layout {
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.left-panel {
+  gap: 1.5rem;
+}
+
+.right-panel {
+  gap: 1.25rem;
+}
+
+.panel-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  gap: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Classrooms List */
+.classrooms-list {
+  gap: 1.25rem;
+}
+
+.class-card {
+  padding: 1.25rem;
+  gap: 1rem;
+  align-items: center;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.class-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -4px hsl(var(--shadow));
+}
+
+.class-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.class-info h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+}
+
+.class-stats {
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: hsl(var(--text-secondary));
+  font-weight: 600;
+  flex-wrap: wrap;
+}
+
+.class-stats span {
+  gap: 0.25rem;
+}
+
+/* Content Creator Form */
+.type-toggle {
+  background-color: hsl(var(--bg-tertiary));
+  border: 1px solid hsl(var(--border));
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  gap: 0.25rem;
+}
+
+.type-toggle-btn {
+  flex-grow: 1;
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: hsl(var(--text-secondary));
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.type-toggle-btn:hover {
+  color: hsl(var(--text-primary));
+}
+
+.type-toggle-btn.active {
+  background-color: hsl(var(--bg-secondary));
+  color: hsl(var(--primary));
+  box-shadow: 0 2px 6px hsl(var(--shadow));
+}
+
+.creator-form {
+  gap: 1.25rem;
+}
+
+/* Attendance Sessions */
+.sessions-layout {
+  gap: 1.5rem;
+}
+
+.sessions-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.sessions-list {
+  gap: 1rem;
+}
+
+.session-item-row {
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  background-color: hsl(var(--bg-tertiary));
+  border: 1px solid hsl(var(--border));
+}
+
+.sess-info h4 {
+  font-size: 1.05rem;
+}
+
+.sess-info p {
+  font-size: 0.85rem;
+  color: hsl(var(--text-secondary));
+}
+
+.badge-done {
+  background-color: hsl(var(--success-light));
+  color: hsl(var(--success));
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+  gap: 0.25rem;
+}
+
+.badge-missed {
+  background-color: hsl(var(--danger-light));
+  color: hsl(var(--danger));
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+  gap: 0.25rem;
+}
+
+.badge-scheduled {
+  background-color: hsl(var(--bg-secondary));
+  color: hsl(var(--text-secondary));
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+  gap: 0.25rem;
+  border: 1px solid hsl(var(--border));
+}
+
+/* Active Attendance Form */
+.panel-header {
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid hsl(var(--border));
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-header h3 {
+  font-size: 1.15rem;
+}
+
+.attendance-roll {
+  gap: 0.75rem;
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.attendance-roll-row {
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.toggle-present-btn {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  min-width: 90px;
+}
+
+.toggle-present-btn.present {
+  background-color: hsl(var(--success));
+  color: white;
+}
+
+.toggle-present-btn.absent {
+  background-color: hsl(var(--danger));
+  color: white;
+}
+
+.save-att-btn {
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.attendance-empty-panel {
+  padding: 4rem 2rem;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Grading Table */
+.submissions-table-card {
+  overflow-x: auto;
+  padding: 0;
+}
+
+.submissions-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.submissions-table th {
+  background-color: hsl(var(--bg-tertiary));
+  color: hsl(var(--text-secondary));
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.submissions-table td {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 0.95rem;
+}
+
+.submissions-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sub-td-class strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.sub-td-class p {
+  font-size: 0.8rem;
+  color: hsl(var(--text-secondary));
+}
+
+.file-link {
+  color: hsl(var(--primary));
+  font-weight: 600;
+  font-size: 0.85rem;
+  gap: 0.25rem;
+}
+
+.no-file-text {
+  color: hsl(var(--text-tertiary));
+  font-size: 0.85rem;
+}
+
+.empty-td {
+  padding: 3rem 1.5rem;
+  color: hsl(var(--text-secondary));
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .overview-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .sessions-grid {
+    grid-template-columns: 1fr;
+  }
+}

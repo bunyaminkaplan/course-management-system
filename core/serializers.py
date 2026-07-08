@@ -2,18 +2,42 @@ from rest_framework import serializers
 from .models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, Session, Attendance
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role']
-        read_only_fields = ['role']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'password']
+        
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = super().create(validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        user = super().update(instance, validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
 
 class ClassRoomSerializer(serializers.ModelSerializer):
     instructors = UserSerializer(many=True, read_only=True)
     students = UserSerializer(many=True, read_only=True)
+    
+    instructor_ids = serializers.PrimaryKeyRelatedField(
+        many=True, write_only=True, queryset=User.objects.filter(role=User.Role.INSTRUCTOR), source='instructors', required=False
+    )
+    student_ids = serializers.PrimaryKeyRelatedField(
+        many=True, write_only=True, queryset=User.objects.filter(role=User.Role.STUDENT), source='students', required=False
+    )
 
     class Meta:
         model = ClassRoom
-        fields = ['id', 'name', 'instructors', 'students', 'created_at']
+        fields = ['id', 'name', 'instructors', 'students', 'instructor_ids', 'student_ids', 'created_at']
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     classroom_name = serializers.CharField(source='classroom.name', read_only=True)

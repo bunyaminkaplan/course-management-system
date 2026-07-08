@@ -111,3 +111,17 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.session} (Present: {self.is_present})"
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=Assignment)
+def create_student_assignments(sender, instance, created, **kwargs):
+    if created:
+        students = instance.classroom.students.all()
+        student_assignments = [
+            StudentAssignment(assignment=instance, student=student, status=StudentAssignment.Status.PENDING)
+            for student in students
+        ]
+        StudentAssignment.objects.bulk_create(student_assignments)

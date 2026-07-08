@@ -12,7 +12,7 @@ from .serializers import (
     SessionSerializer, AttendanceSerializer, FeedItemSerializer
 )
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
