@@ -1,0 +1,39 @@
+# Python
+*.py[cod]
+*$py.class
+__pycache__/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Media & Static Files
+media/
+staticfiles/
