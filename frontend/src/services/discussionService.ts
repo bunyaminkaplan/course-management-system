@@ -15,6 +15,7 @@ export interface Thread {
   title: string;
   content: string;
   score: number;
+  user_vote?: number;
   created_at: string;
   comments?: Comment[];
 }
@@ -26,6 +27,7 @@ export interface Comment {
   content: string;
   parent: number | null;
   score: number;
+  user_vote?: number;
   replies?: Comment[];
   created_at: string;
 }

@@ -34,12 +34,14 @@ class ThreadViewSet(viewsets.ModelViewSet):
         if existing_vote:
             existing_vote.delete()
             detail_msg = "Vote removed (neutralized)."
+            current_user_vote = 0
         else:
             Vote.objects.create(user=request.user, thread=thread, value=value)
             detail_msg = "Vote recorded."
+            current_user_vote = value
             
         score = thread.votes.aggregate(total=models.Sum('value'))['total'] or 0
-        return Response({"detail": detail_msg, "score": score})
+        return Response({"detail": detail_msg, "score": score, "user_vote": current_user_vote})
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -61,9 +63,11 @@ class CommentViewSet(viewsets.ModelViewSet):
         if existing_vote:
             existing_vote.delete()
             detail_msg = "Vote removed (neutralized)."
+            current_user_vote = 0
         else:
             Vote.objects.create(user=request.user, comment=comment, value=value)
             detail_msg = "Vote recorded."
+            current_user_vote = value
             
         score = comment.votes.aggregate(total=models.Sum('value'))['total'] or 0
-        return Response({"detail": detail_msg, "score": score})
+        return Response({"detail": detail_msg, "score": score, "user_vote": current_user_vote})

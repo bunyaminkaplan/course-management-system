@@ -5,11 +5,13 @@ import { discussionService } from '../../services/discussionService';
 interface VoteControlsProps {
   id: number;
   initialScore: number;
+  initialUserVote?: number;
   type: 'thread' | 'comment';
 }
 
-export const VoteControls: React.FC<VoteControlsProps> = ({ id, initialScore, type }) => {
+export const VoteControls: React.FC<VoteControlsProps> = ({ id, initialScore, initialUserVote = 0, type }) => {
   const [score, setScore] = useState(initialScore);
+  const [userVote, setUserVote] = useState(initialUserVote);
   const [loading, setLoading] = useState(false);
 
   const handleVote = async (value: number) => {
@@ -24,6 +26,9 @@ export const VoteControls: React.FC<VoteControlsProps> = ({ id, initialScore, ty
       }
       if (res && typeof res.score === 'number') {
         setScore(res.score);
+        if (typeof res.user_vote === 'number') {
+          setUserVote(res.user_vote);
+        }
       }
     } catch (error) {
       console.error('Vote failed:', error);
@@ -41,7 +46,7 @@ export const VoteControls: React.FC<VoteControlsProps> = ({ id, initialScore, ty
         disabled={loading}
         title="Upvote"
       >
-        <ChevronUp size={24} style={{ color: 'hsl(var(--text-secondary))' }} />
+        <ChevronUp size={24} style={{ color: userVote === 1 ? 'hsl(var(--success))' : 'hsl(var(--text-secondary))' }} />
       </button>
       <span style={{ fontWeight: 700, fontSize: '1rem', color: 'hsl(var(--text-primary))' }}>
         {score}
@@ -53,7 +58,7 @@ export const VoteControls: React.FC<VoteControlsProps> = ({ id, initialScore, ty
         disabled={loading}
         title="Downvote"
       >
-        <ChevronDown size={24} style={{ color: 'hsl(var(--text-secondary))' }} />
+        <ChevronDown size={24} style={{ color: userVote === -1 ? 'hsl(var(--danger))' : 'hsl(var(--text-secondary))' }} />
       </button>
     </div>
   );

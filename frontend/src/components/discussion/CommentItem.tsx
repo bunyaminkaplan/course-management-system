@@ -31,7 +31,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReplyAdded 
   return (
     <div className="flex-col animate-fade" style={{ marginTop: '1rem' }}>
       <div className="flex-row" style={{ alignItems: 'flex-start', gap: '1rem' }}>
-        <VoteControls id={comment.id} initialScore={comment.score} type="comment" />
+        <VoteControls id={comment.id} initialScore={comment.score} initialUserVote={comment.user_vote} type="comment" />
         
         <div className="flex-col" style={{ flex: 1 }}>
           <div className="flex-row" style={{ gap: '0.5rem', marginBottom: '0.5rem' }}>

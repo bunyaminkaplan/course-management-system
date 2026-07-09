@@ -12,29 +12,47 @@ class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     replies = RecursiveField(many=True, read_only=True)
     score = serializers.SerializerMethodField()
+    user_vote = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['id', 'thread', 'author', 'content', 'parent', 'replies', 'score', 'created_at']
-        read_only_fields = ['author', 'score']
+        fields = ['id', 'thread', 'author', 'content', 'parent', 'replies', 'score', 'user_vote', 'created_at']
+        read_only_fields = ['author', 'score', 'user_vote']
 
     def get_score(self, obj):
         result = obj.votes.aggregate(total=Sum('value'))
         return result['total'] or 0
+
+    def get_user_vote(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            vote = obj.votes.filter(user=request.user).first()
+            if vote:
+                return vote.value
+        return 0
 
 class ThreadSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     comments = serializers.SerializerMethodField()
     score = serializers.SerializerMethodField()
+    user_vote = serializers.SerializerMethodField()
 
     class Meta:
         model = Thread
-        fields = ['id', 'classroom', 'author', 'title', 'content', 'comments', 'score', 'created_at']
-        read_only_fields = ['author', 'score']
+        fields = ['id', 'classroom', 'author', 'title', 'content', 'comments', 'score', 'user_vote', 'created_at']
+        read_only_fields = ['author', 'score', 'user_vote']
 
     def get_score(self, obj):
         result = obj.votes.aggregate(total=Sum('value'))
         return result['total'] or 0
+
+    def get_user_vote(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            vote = obj.votes.filter(user=request.user).first()
+            if vote:
+                return vote.value
+        return 0
 
     def get_comments(self, obj):
         # Return only top-level comments; nested replies are handled by RecursiveField

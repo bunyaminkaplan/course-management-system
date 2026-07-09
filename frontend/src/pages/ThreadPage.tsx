@@ -75,7 +75,7 @@ export const ThreadPage: React.FC = () => {
 
       {/* Main Thread Content */}
       <div className="card glass flex-row" style={{ alignItems: 'flex-start', gap: '1.5rem', marginBottom: '2rem' }}>
-        <VoteControls id={thread.id} initialScore={thread.score} type="thread" />
+        <VoteControls id={thread.id} initialScore={thread.score} initialUserVote={thread.user_vote} type="thread" />
         
         <div className="flex-col" style={{ flex: 1 }}>
           <h1 style={{ color: 'hsl(var(--primary))', marginBottom: '0.5rem', fontSize: '1.8rem' }}>
