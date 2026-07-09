@@ -12,7 +12,8 @@ import {
   Clock, 
   FileText,
   Menu,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react';
 import './Layout.css';
 
@@ -51,12 +52,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           { label: 'Birleştirilmiş Pano', path: '/', icon: <BookOpen className={defaultIconClass} /> },
           { label: 'Ödevler & Teslimler', path: '/assignments', icon: <FileText className={defaultIconClass} /> },
           { label: 'Ders Programı & Yoklama', path: '/attendance', icon: <Calendar className={defaultIconClass} /> },
+          { label: 'Soru & Cevap (Forum)', path: '/forum', icon: <MessageSquare className={defaultIconClass} /> },
         ];
       case 'INSTRUCTOR':
         return [
           { label: 'Sınıflarım', path: '/', icon: <BookOpen className={defaultIconClass} /> },
           { label: 'Yoklama Girişi', path: '/instructor-sessions', icon: <ClipboardList className={defaultIconClass} /> },
           { label: 'Ödev Değerlendirme', path: '/instructor-assignments', icon: <FileText className={defaultIconClass} /> },
+          { label: 'Soru & Cevap (Forum)', path: '/forum', icon: <MessageSquare className={defaultIconClass} /> },
         ];
       case 'ADMIN':
         return [

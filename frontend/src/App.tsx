@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import StudentDashboard from './pages/StudentDashboard';
 import InstructorDashboard from './pages/InstructorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import ForumPage from './pages/ForumPage';
+import ThreadPage from './pages/ThreadPage';
 
 // Route guards to protect pages
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
@@ -99,6 +101,24 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
                 <InstructorDashboard />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Forum Sub-routes */}
+          <Route 
+            path="/forum" 
+            element={
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR']}>
+                <ForumPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/forum/thread/:id" 
+            element={
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR']}>
+                <ThreadPage />
               </ProtectedRoute>
             } 
           />
