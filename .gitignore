@@ -39,5 +39,4 @@ media/
 staticfiles/
 
 # Seed Data
-backend/seeds/
 project_info/
