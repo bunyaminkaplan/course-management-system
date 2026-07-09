@@ -1,0 +1,109 @@
+@import './globals.css';
+
+/* Buttons and Inputs Styling */
+button, .btn {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  transition: all var(--transition-fast);
+}
+
+button.primary, .btn.primary {
+  background-color: hsl(var(--primary));
+  color: #ffffff;
+}
+button.primary:hover, .btn.primary:hover {
+  background-color: hsl(var(--primary-hover));
+  transform: translateY(-1px);
+}
+button.primary:active, .btn.primary:active {
+  transform: translateY(0);
+}
+
+button.secondary, .btn.secondary {
+  background-color: hsl(var(--bg-tertiary));
+  color: hsl(var(--text-primary));
+  border: 1px solid hsl(var(--border));
+}
+button.secondary:hover, .btn.secondary:hover {
+  background-color: hsl(var(--border));
+}
+
+button.danger, .btn.danger {
+  background-color: hsl(var(--danger));
+  color: #ffffff;
+}
+button.danger:hover, .btn.danger:hover {
+  background-color: hsl(var(--danger-light) / 0.9);
+}
+
+button:disabled, .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--bg-secondary));
+  color: hsl(var(--text-primary));
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: hsl(var(--text-secondary));
+  margin-bottom: var(--space-xs);
+  display: block;
+}
+
+/* Glassmorphic Panel/Card Layouts */
+.card {
+  background: hsl(var(--bg-secondary));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: 0 4px 20px -2px hsl(var(--shadow));
+}
+
+.glass {
+  background: hsl(var(--glass-bg));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--glass-border));
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px 0 hsl(var(--shadow));
+}
+
+/* Common Layouts and Flex/Grid classes */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+.grid {
+  display: grid;
+}

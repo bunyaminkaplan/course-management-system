@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Typography */
+  font-family: 'Outfit', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  /* Theming */
+  color-scheme: light dark;
+
+  /* HSL Color System - Light Mode Default */
+  --bg-primary: 210 20% 98%;      /* #f8fafc */
+  --bg-secondary: 0 0% 100%;       /* #ffffff */
+  --bg-tertiary: 210 20% 95%;      /* #f1f5f9 */
+  --text-primary: 220 40% 10%;     /* #0f172a */
+  --text-secondary: 215 15% 40%;   /* #475569 */
+  --text-tertiary: 215 15% 60%;    /* #94a3b8 */
+  
+  --primary: 243 75% 59%;          /* Indigo 600 */
+  --primary-hover: 244 75% 50%;
+  --primary-light: 243 100% 96%;
+  
+  --success: 142 70% 45%;          /* Emerald 600 */
+  --success-light: 142 80% 95%;
+  --warning: 38 90% 50%;           /* Amber 600 */
+  --warning-light: 38 100% 96%;
+  --danger: 0 84% 60%;             /* Rose 600 */
+  --danger-light: 0 100% 96%;
+  
+  --border: 215 20% 90%;
+  --shadow: 220 40% 2% / 0.05;
+  --glass-bg: 0 0% 100% / 0.7;
+  --glass-border: 0 0% 100% / 0.5;
+  
+  --sidebar-bg: 222 47% 11%;       /* Slate 900 */
+  --sidebar-text: 210 40% 96%;     /* Slate 100 */
+  --sidebar-hover: 217 33% 17%;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  
+  /* Border Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  
+  /* Spacing Tokens */
+  --space-xs: 0.25rem;  /* 4px */
+  --space-sm: 0.5rem;   /* 8px */
+  --space-md: 1rem;     /* 16px */
+  --space-lg: 1.5rem;   /* 24px */
+  --space-xl: 2rem;     /* 32px */
+  --space-2xl: 3rem;    /* 48px */
+  
+  accent-color: hsl(var(--primary));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark Mode Overrides */
+    --bg-primary: 224 71% 4%;        /* Slate 950 */
+    --bg-secondary: 222 47% 7%;      /* Slate 900 */
+    --bg-tertiary: 217 33% 12%;      /* Slate 800 */
+    --text-primary: 210 40% 98%;     /* Slate 50 */
+    --text-secondary: 215 20% 75%;   /* Slate 300 */
+    --text-tertiary: 215 15% 50%;    /* Slate 500 */
+    
+    --primary: 245 100% 70%;         /* Vibrant purple-blue */
+    --primary-hover: 245 100% 75%;
+    --primary-light: 245 100% 15%;
+    
+    --success: 142 70% 40%;
+    --success-light: 142 80% 10%;
+    --warning: 38 90% 45%;
+    --warning-light: 38 100% 10%;
+    --danger: 0 84% 55%;
+    --danger-light: 0 100% 10%;
+    
+    --border: 217 33% 15%;
+    --shadow: 0 0% 0% / 0.3;
+    --glass-bg: 222 47% 7% / 0.7;
+    --glass-border: 217 33% 15% / 0.5;
+    
+    --sidebar-bg: 224 71% 4%;
+    --sidebar-text: 210 40% 98%;
+    --sidebar-hover: 217 33% 10%;
+  }
+}

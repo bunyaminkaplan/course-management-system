@@ -62,8 +62,8 @@ export const ForumPage: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade" style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <div className="flex-row" style={{ justifyContent: 'space-between', marginBottom: '2rem' }}>
+    <div className="animate-fade" style={{ maxWidth: '900px', margin: '0 auto', padding: 'var(--space-xl) var(--space-md)' }}>
+      <div className="flex-row" style={{ justifyContent: 'space-between', marginBottom: 'var(--space-xl)' }}>
         <h2>Soru & Cevap (Forum)</h2>
         
         <select 
@@ -77,27 +77,27 @@ export const ForumPage: React.FC = () => {
         </select>
       </div>
 
-      <div style={{ marginBottom: '2rem' }}>
+      <div style={{ marginBottom: 'var(--space-xl)' }}>
         {!isCreating ? (
           <button className="btn primary" onClick={() => setIsCreating(true)}>+ Yeni Başlık Aç</button>
         ) : (
           <div className="card glass animate-fade">
-            <h3 style={{ marginBottom: '1rem', color: 'hsl(var(--primary))' }}>Yeni Başlık</h3>
+            <h3 style={{ marginBottom: 'var(--space-md)', color: 'hsl(var(--primary))' }}>Yeni Başlık</h3>
             <label>Konu Başlığı</label>
             <input 
-              style={{ width: '100%', marginBottom: '1rem' }} 
+              style={{ width: '100%', marginBottom: 'var(--space-md)' }} 
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Örn: Vize Sınavı Konuları"
             />
             <label>İçerik</label>
             <textarea 
-              style={{ width: '100%', minHeight: '120px', marginBottom: '1rem' }}
+              style={{ width: '100%', minHeight: '120px', marginBottom: 'var(--space-md)' }}
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               placeholder="Sorunuzu veya düşüncenizi detaylıca yazın..."
             />
-            <div className="flex-row" style={{ gap: '1rem' }}>
+            <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
               <button className="btn primary" onClick={handleCreateThread} disabled={!newTitle.trim() || !newContent.trim()}>
                 Başlığı Yayınla
               </button>
@@ -108,11 +108,11 @@ export const ForumPage: React.FC = () => {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', color: 'hsl(var(--text-tertiary))', padding: '2rem' }}>
+        <div style={{ textAlign: 'center', color: 'hsl(var(--text-tertiary))', padding: 'var(--space-xl)' }}>
           Başlıklar yükleniyor...
         </div>
       ) : threads.length === 0 ? (
-        <div className="card glass" style={{ textAlign: 'center', color: 'hsl(var(--text-tertiary))', padding: '3rem' }}>
+        <div className="card glass" style={{ textAlign: 'center', color: 'hsl(var(--text-tertiary))', padding: 'var(--space-2xl)' }}>
           Bu sınıfta henüz hiç başlık açılmamış. Sorusunu soran ilk sen ol!
         </div>
       ) : (
