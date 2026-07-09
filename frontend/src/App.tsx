@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import StudentDashboard from './pages/StudentDashboard';
@@ -54,98 +55,100 @@ const RoleDashboardLoader: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <Router>
+    <ThemeProvider>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          {/* Main Dashboard Root */}
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <RoleDashboardLoader />
-              </ProtectedRoute>
-            } 
-          />
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            {/* Main Dashboard Root */}
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <RoleDashboardLoader />
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Student Sub-routes */}
-          <Route 
-            path="/assignments" 
-            element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
-                <StudentDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/attendance" 
-            element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
-                <StudentDashboard />
-              </ProtectedRoute>
-            } 
-          />
+            {/* Student Sub-routes */}
+            <Route 
+              path="/assignments" 
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/attendance" 
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Instructor Sub-routes */}
-          <Route 
-            path="/instructor-sessions" 
-            element={
-              <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-                <InstructorDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/instructor-assignments" 
-            element={
-              <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-                <InstructorDashboard />
-              </ProtectedRoute>
-            } 
-          />
+            {/* Instructor Sub-routes */}
+            <Route 
+              path="/instructor-sessions" 
+              element={
+                <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
+                  <InstructorDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/instructor-assignments" 
+              element={
+                <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
+                  <InstructorDashboard />
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Forum Sub-routes */}
-          <Route 
-            path="/forum" 
-            element={
-              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR']}>
-                <ForumPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/forum/thread/:id" 
-            element={
-              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR']}>
-                <ThreadPage />
-              </ProtectedRoute>
-            } 
-          />
+            {/* Forum Sub-routes */}
+            <Route 
+              path="/forum" 
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR']}>
+                  <ForumPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/forum/thread/:id" 
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR']}>
+                  <ThreadPage />
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Admin Sub-routes */}
-          <Route 
-            path="/admin-classrooms" 
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin-schedule" 
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
+            {/* Admin Sub-routes */}
+            <Route 
+              path="/admin-classrooms" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin-schedule" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
       </AuthProvider>
-    </Router>
+    </ThemeProvider>
   );
 };
 

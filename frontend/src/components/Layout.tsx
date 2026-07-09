@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   GraduationCap, 
   LogOut, 
@@ -13,7 +14,9 @@ import {
   FileText,
   Menu,
   X,
-  MessageSquare
+  MessageSquare,
+  Sun,
+  Moon
 } from 'lucide-react';
 import './Layout.css';
 
@@ -23,6 +26,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -116,7 +120,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           })}
         </nav>
 
-        <div className="sidebar-footer">
+        <div className="sidebar-footer flex-col" style={{ gap: '0.5rem' }}>
+          <button className="logout-btn flex-row" onClick={toggleTheme} style={{ background: 'transparent', color: 'hsl(var(--text-secondary))' }}>
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            <span>{theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}</span>
+          </button>
+          
           <button className="logout-btn flex-row" onClick={handleLogout}>
             <LogOut size={18} />
             <span>Çıkış Yap</span>
@@ -133,8 +142,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <GraduationCap size={24} />
           <span>KBS Portal</span>
         </div>
-        <div className="mobile-avatar">
-          {user.username[0].toUpperCase()}
+        <div className="flex-row" style={{ gap: '1rem', alignItems: 'center' }}>
+          <button 
+            onClick={toggleTheme} 
+            style={{ background: 'transparent', border: 'none', color: 'hsl(var(--text-secondary))', display: 'flex' }}
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <div className="mobile-avatar">
+            {user.username[0].toUpperCase()}
+          </div>
         </div>
       </header>
 
@@ -167,6 +184,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 );
               })}
             </div>
+
+            <button className="mobile-logout flex-row" onClick={toggleTheme} style={{ marginTop: 'auto', marginBottom: '0.5rem', background: 'transparent', color: 'hsl(var(--text-secondary))' }}>
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              <span>{theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}</span>
+            </button>
 
             <button className="mobile-logout flex-row" onClick={handleLogout}>
               <LogOut size={18} />

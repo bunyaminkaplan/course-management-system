@@ -57,8 +57,7 @@
   accent-color: hsl(var(--primary));
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+[data-theme='dark'] {
     /* Dark Mode Overrides */
     --bg-primary: 224 71% 4%;        /* Slate 950 */
     --bg-secondary: 222 47% 7%;      /* Slate 900 */
@@ -86,5 +85,4 @@
     --sidebar-bg: 224 71% 4%;
     --sidebar-text: 210 40% 98%;
     --sidebar-hover: 217 33% 10%;
-  }
 }
