@@ -30,12 +30,16 @@ class ThreadViewSet(viewsets.ModelViewSet):
         if value not in [1, -1]:
             return Response({"detail": "value must be 1 or -1"}, status=status.HTTP_400_BAD_REQUEST)
         
-        vote, created = Vote.objects.update_or_create(
-            user=request.user,
-            thread=thread,
-            defaults={'value': value}
-        )
-        return Response({"detail": "Vote recorded.", "score": thread.votes.aggregate(total=models.Sum('value'))['total']})
+        existing_vote = Vote.objects.filter(user=request.user, thread=thread).first()
+        if existing_vote:
+            existing_vote.delete()
+            detail_msg = "Vote removed (neutralized)."
+        else:
+            Vote.objects.create(user=request.user, thread=thread, value=value)
+            detail_msg = "Vote recorded."
+            
+        score = thread.votes.aggregate(total=models.Sum('value'))['total'] or 0
+        return Response({"detail": detail_msg, "score": score})
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -53,9 +57,13 @@ class CommentViewSet(viewsets.ModelViewSet):
         if value not in [1, -1]:
             return Response({"detail": "value must be 1 or -1"}, status=status.HTTP_400_BAD_REQUEST)
         
-        vote, created = Vote.objects.update_or_create(
-            user=request.user,
-            comment=comment,
-            defaults={'value': value}
-        )
-        return Response({"detail": "Vote recorded.", "score": comment.votes.aggregate(total=models.Sum('value'))['total']})
+        existing_vote = Vote.objects.filter(user=request.user, comment=comment).first()
+        if existing_vote:
+            existing_vote.delete()
+            detail_msg = "Vote removed (neutralized)."
+        else:
+            Vote.objects.create(user=request.user, comment=comment, value=value)
+            detail_msg = "Vote recorded."
+            
+        score = comment.votes.aggregate(total=models.Sum('value'))['total'] or 0
+        return Response({"detail": detail_msg, "score": score})
