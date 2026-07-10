@@ -1,4 +1,6 @@
+import sys
 import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'course_backend.settings')
@@ -7,8 +9,15 @@ django.setup()
 from core.models import User, ClassRoom
 from discussion.models import Thread, Comment, Vote
 
-student = User.objects.get(username='student1')
-instructor = User.objects.get(username='instructor1')
+student, created_s = User.objects.get_or_create(username='student1', defaults={'email': 'student1@test.com', 'role': User.Role.STUDENT})
+if created_s:
+    student.set_password('password123')
+    student.save()
+
+instructor, created_i = User.objects.get_or_create(username='instructor1', defaults={'email': 'instructor1@test.com', 'role': User.Role.INSTRUCTOR})
+if created_i:
+    instructor.set_password('password123')
+    instructor.save()
 classroom = ClassRoom.objects.get(name="Matematik 101")
 
 # 1. Create a Thread by student

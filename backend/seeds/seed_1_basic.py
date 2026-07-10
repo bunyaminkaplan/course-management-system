@@ -1,4 +1,6 @@
+import sys
 import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import django
 from datetime import timedelta
 from django.utils import timezone
@@ -8,8 +10,28 @@ django.setup()
 
 from core.models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule
 
-student = User.objects.get(username='student1')
-instructor = User.objects.get(username='instructor1')
+admin, created_a = User.objects.get_or_create(
+    username='admin', 
+    defaults={
+        'email': 'admin@test.com', 
+        'role': User.Role.ADMIN, 
+        'is_staff': True, 
+        'is_superuser': True
+    }
+)
+if created_a:
+    admin.set_password('password123')
+    admin.save()
+
+student, created_s = User.objects.get_or_create(username='student1', defaults={'email': 'student1@test.com', 'role': User.Role.STUDENT})
+if created_s:
+    student.set_password('password123')
+    student.save()
+
+instructor, created_i = User.objects.get_or_create(username='instructor1', defaults={'email': 'instructor1@test.com', 'role': User.Role.INSTRUCTOR})
+if created_i:
+    instructor.set_password('password123')
+    instructor.save()
 
 # 1. Sınıf Oluştur ve Kullanıcıları Ekle
 classroom, _ = ClassRoom.objects.get_or_create(

@@ -8,7 +8,7 @@ KBS Portal, Django (Backend) ve React/Vite (Frontend) kullanılarak geliştirilm
 
 Projeyi bilgisayarınıza klonlamanıza veya klasörlerle uğraşmanıza gerek yok. Aşağıdaki tek satırlık komutu terminalinize yapıştırdığınızda; proje indirilecek, sanal ortamlar kurulacak, veritabanı ayarlanacak ve tüm kütüphaneler otomatik yüklenecektir.
 
-*(Terminali açın ve aşağıdaki komutu kopyalayıp yapıştırın)*
+_(Terminali açın ve aşağıdaki komutu kopyalayıp yapıştırın)_
 
 ```bash
 curl -O https://raw.githubusercontent.com/bunyaminkaplan/course-management-system/main/setup.py && python setup.py
@@ -33,6 +33,7 @@ python start.py
 ```
 
 Bu komut hem backend (Django) hem de frontend (React) sunucularını aynı anda başlatır.
+
 - **Frontend URL:** `http://localhost:5173`
 - **Backend API:** `http://127.0.0.1:8000`
 
@@ -44,8 +45,8 @@ Uygulamayı durdurmak için terminalde `Ctrl + C` yapmanız yeterlidir.
 
 Kurulum sırasında sisteme örnek veriler eklenir. Aşağıdaki hesapları kullanarak hemen sisteme giriş yapabilirsiniz:
 
-| Rol                  | Kullanıcı Adı | Şifre            |
-| :------------------- | :------------ | :--------------- |
-| **Yönetici (Admin)** | `admin`       | `admin`          |
-| **Öğrenci**          | `student1`    | `Student.123`    |
-| **Eğitmen**          | `instructor1` | `Instructor.123` |
+| Rol                  | Kullanıcı Adı | Şifre         |
+| :------------------- | :------------ | :------------ |
+| **Yönetici (Admin)** | `admin`       | `password123` |
+| **Öğrenci**          | `student1`    | `password123` |
+| **Eğitmen**          | `instructor1` | `password123` |
