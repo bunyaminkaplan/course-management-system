@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { discussionService, type Thread } from '../services/discussionService';
 import { ThreadCard } from '../components/discussion/ThreadCard';
+import { Pagination } from '../components/Pagination';
 
 export const ForumPage: React.FC = () => {
   const [classrooms, setClassrooms] = useState<any[]>([]);
@@ -11,6 +12,13 @@ export const ForumPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
+
+  // Pagination state
+  const [threadPage, setThreadPage] = useState(1);
+  const THREADS_PER_PAGE = 5;
+
+  const totalThreadPages = Math.ceil(threads.length / THREADS_PER_PAGE);
+  const paginatedThreads = threads.slice((threadPage - 1) * THREADS_PER_PAGE, threadPage * THREADS_PER_PAGE);
 
   // Fetch classrooms on mount
   useEffect(() => {
@@ -34,6 +42,7 @@ export const ForumPage: React.FC = () => {
     const fetchThreads = async () => {
       if (!selectedClassroomId) return;
       setLoading(true);
+      setThreadPage(1);
       try {
         const data = await discussionService.getThreadsByClassroom(selectedClassroomId);
         // Sort threads by score descending
@@ -56,6 +65,7 @@ export const ForumPage: React.FC = () => {
       setNewTitle('');
       setNewContent('');
       setIsCreating(false);
+      setThreadPage(1);
     } catch (err) {
       console.error('Failed to create thread', err);
     }
@@ -117,9 +127,17 @@ export const ForumPage: React.FC = () => {
         </div>
       ) : (
         <div className="flex-col">
-          {threads.map(thread => (
+          {paginatedThreads.map(thread => (
             <ThreadCard key={thread.id} thread={thread} />
           ))}
+
+          <Pagination
+            currentPage={threadPage}
+            totalPages={totalThreadPages}
+            onPageChange={setThreadPage}
+            totalItems={threads.length}
+            itemsPerPage={THREADS_PER_PAGE}
+          />
         </div>
       )}
     </div>
