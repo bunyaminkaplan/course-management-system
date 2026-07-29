@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { Pagination } from '../components/Pagination';
 import { 
   BookOpen, 
   Users, 
@@ -123,6 +124,14 @@ export const InstructorDashboard: React.FC = () => {
   const [selectedSubmission, setSelectedSubmission] = useState<StudentAssignment | null>(null);
   const [gradeValue, setGradeValue] = useState<string>('');
   const [savingGrade, setSavingGrade] = useState(false);
+
+  // Pagination state
+  const [submissionPage, setSubmissionPage] = useState(1);
+  const SUBMISSIONS_PER_PAGE = 8;
+
+  const submittedList = submissions.filter(s => s.status === 'SUBMITTED');
+  const totalSubmissionPages = Math.ceil(submittedList.length / SUBMISSIONS_PER_PAGE);
+  const paginatedSubmissions = submittedList.slice((submissionPage - 1) * SUBMISSIONS_PER_PAGE, submissionPage * SUBMISSIONS_PER_PAGE);
 
   const fetchData = async () => {
     if (!user) return;
@@ -635,7 +644,7 @@ export const InstructorDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {submissions.filter(s => s.status === 'SUBMITTED').map((sub) => (
+                {paginatedSubmissions.map((sub) => (
                   <tr key={sub.id}>
                     <td>
                       <div className="sub-td-class">
@@ -668,7 +677,7 @@ export const InstructorDashboard: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-                {submissions.filter(s => s.status === 'SUBMITTED').length === 0 && (
+                {submittedList.length === 0 && (
                   <tr>
                     <td colSpan={6} className="text-center empty-td">
                       <FileText size={36} className="empty-icon" style={{ margin: '1rem auto' }} />
@@ -678,6 +687,14 @@ export const InstructorDashboard: React.FC = () => {
                 )}
               </tbody>
             </table>
+
+            <Pagination
+              currentPage={submissionPage}
+              totalPages={totalSubmissionPages}
+              onPageChange={setSubmissionPage}
+              totalItems={submittedList.length}
+              itemsPerPage={SUBMISSIONS_PER_PAGE}
+            />
           </div>
         </div>
       )}

@@ -3,7 +3,7 @@
 }
 
 .admin-layout {
-  grid-template-columns: 1.5fr 1fr;
+  grid-template-columns: 1.8fr 1fr;
   gap: 2rem;
   align-items: start;
 }
@@ -20,27 +20,53 @@
 .users-table-card, .schedules-table-card {
   padding: 0;
   overflow-x: auto;
+  min-height: 680px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  table-layout: fixed;
 }
+
+.users-table-card .admin-table th:nth-child(1) { width: 23%; }
+.users-table-card .admin-table th:nth-child(2) { width: 20%; }
+.users-table-card .admin-table th:nth-child(3) { width: 26%; }
+.users-table-card .admin-table th:nth-child(4) { width: 14%; }
+.users-table-card .admin-table th:nth-child(5) { width: 17%; text-align: right; padding-right: 1.5rem; }
+
+.schedules-table-card .admin-table th:nth-child(1) { width: 30%; }
+.schedules-table-card .admin-table th:nth-child(2) { width: 20%; }
+.schedules-table-card .admin-table th:nth-child(3) { width: 17%; }
+.schedules-table-card .admin-table th:nth-child(4) { width: 17%; }
+.schedules-table-card .admin-table th:nth-child(5) { width: 16%; text-align: right; }
 
 .admin-table th {
   background-color: hsl(var(--bg-tertiary));
   color: hsl(var(--text-secondary));
   font-size: 0.85rem;
   font-weight: 700;
-  padding: 1rem 1.5rem;
+  padding: 1rem;
   border-bottom: 1px solid hsl(var(--border));
 }
 
 .admin-table td {
-  padding: 1rem 1.5rem;
+  padding: 0.85rem 1rem;
   border-bottom: 1px solid hsl(var(--border));
   font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-table td:last-child {
+  overflow: visible;
+  text-align: right;
+  padding-right: 1.5rem;
 }
 
 .admin-table tr:last-child td {

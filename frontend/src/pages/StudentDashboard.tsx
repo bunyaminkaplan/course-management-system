@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { Pagination } from '../components/Pagination';
 import { 
   Bell, 
   FileText, 
@@ -100,6 +101,35 @@ export const StudentDashboard: React.FC = () => {
 
   // Filter Feed State
   const [feedFilter, setFeedFilter] = useState<'ALL' | 'ANNOUNCEMENT' | 'ASSIGNMENT'>('ALL');
+
+  // Pagination states
+  const [feedPage, setFeedPage] = useState(1);
+  const [assignmentPage, setAssignmentPage] = useState(1);
+  const [attendancePage, setAttendancePage] = useState(1);
+  const [schedulePage, setSchedulePage] = useState(1);
+
+  const FEED_PER_PAGE = 5;
+  const ASSIGNMENTS_PER_PAGE = 6;
+  const ATTENDANCE_PER_PAGE = 8;
+  const SCHEDULES_PER_PAGE = 8;
+
+  const filteredFeed = feed.filter(item => feedFilter === 'ALL' || item.type === feedFilter);
+  const totalFeedPages = Math.ceil(filteredFeed.length / FEED_PER_PAGE);
+  const paginatedFeed = filteredFeed.slice((feedPage - 1) * FEED_PER_PAGE, feedPage * FEED_PER_PAGE);
+
+  const totalAssignmentPages = Math.ceil(assignments.length / ASSIGNMENTS_PER_PAGE);
+  const paginatedAssignments = assignments.slice((assignmentPage - 1) * ASSIGNMENTS_PER_PAGE, assignmentPage * ASSIGNMENTS_PER_PAGE);
+
+  const totalAttendancePages = Math.ceil(attendances.length / ATTENDANCE_PER_PAGE);
+  const paginatedAttendances = attendances.slice((attendancePage - 1) * ATTENDANCE_PER_PAGE, attendancePage * ATTENDANCE_PER_PAGE);
+
+  const totalSchedulePages = Math.ceil(schedules.length / SCHEDULES_PER_PAGE);
+  const paginatedSchedules = schedules.slice((schedulePage - 1) * SCHEDULES_PER_PAGE, schedulePage * SCHEDULES_PER_PAGE);
+
+  const handleFilterChange = (filter: 'ALL' | 'ANNOUNCEMENT' | 'ASSIGNMENT') => {
+    setFeedFilter(filter);
+    setFeedPage(1);
+  };
 
   const fetchData = async () => {
     if (!user) return;
@@ -257,19 +287,19 @@ export const StudentDashboard: React.FC = () => {
             <div className="filter-tabs flex-row">
               <button 
                 className={`filter-tab ${feedFilter === 'ALL' ? 'active' : ''}`}
-                onClick={() => setFeedFilter('ALL')}
+                onClick={() => handleFilterChange('ALL')}
               >
                 Tümü
               </button>
               <button 
                 className={`filter-tab ${feedFilter === 'ANNOUNCEMENT' ? 'active' : ''}`}
-                onClick={() => setFeedFilter('ANNOUNCEMENT')}
+                onClick={() => handleFilterChange('ANNOUNCEMENT')}
               >
                 Duyurular
               </button>
               <button 
                 className={`filter-tab ${feedFilter === 'ASSIGNMENT' ? 'active' : ''}`}
-                onClick={() => setFeedFilter('ASSIGNMENT')}
+                onClick={() => handleFilterChange('ASSIGNMENT')}
               >
                 Ödevler
               </button>
@@ -277,61 +307,67 @@ export const StudentDashboard: React.FC = () => {
           </div>
 
           <div className="feed-list flex-col">
-            {feed
-              .filter(item => feedFilter === 'ALL' || item.type === feedFilter)
-              .map((item, idx) => {
-                const isAnn = item.type === 'ANNOUNCEMENT';
-                return (
-                  <div key={`${item.type}-${item.id}-${idx}`} className="feed-card card animate-fade">
-                    <div className="feed-card-header flex-row">
-                      <span className={`type-tag ${isAnn ? 'announcement' : 'assignment'}`}>
-                        {isAnn ? <Bell size={14} /> : <FileText size={14} />}
-                        {isAnn ? 'Duyuru' : 'Ödev'}
-                      </span>
-                      <span className="classroom-tag flex-row">
-                        <BookOpen size={14} /> {item.classroom_name}
-                      </span>
-                      <span className="date-tag">
-                        {new Date(item.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-
-                    <h3 className="feed-card-title">{item.title}</h3>
-                    <p className="feed-card-content">{item.content}</p>
-
-                    {!isAnn && item.deadline && (
-                      <div className="feed-card-footer flex-row">
-                        <div className="deadline flex-row">
-                          <Calendar size={14} />
-                          <span>Son Teslim: {new Date(item.deadline).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                        {item.status && getStatusBadge(item.status)}
-                      </div>
-                    )}
+            {paginatedFeed.map((item, idx) => {
+              const isAnn = item.type === 'ANNOUNCEMENT';
+              return (
+                <div key={`${item.type}-${item.id}-${idx}`} className="feed-card card animate-fade">
+                  <div className="feed-card-header flex-row">
+                    <span className={`type-tag ${isAnn ? 'announcement' : 'assignment'}`}>
+                      {isAnn ? <Bell size={14} /> : <FileText size={14} />}
+                      {isAnn ? 'Duyuru' : 'Ödev'}
+                    </span>
+                    <span className="classroom-tag flex-row">
+                      <BookOpen size={14} /> {item.classroom_name}
+                    </span>
+                    <span className="date-tag">
+                      {new Date(item.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                );
-              })}
-            {feed.length === 0 && (
+
+                  <h3 className="feed-card-title">{item.title}</h3>
+                  <p className="feed-card-content">{item.content}</p>
+
+                  {!isAnn && item.deadline && (
+                    <div className="feed-card-footer flex-row">
+                      <div className="deadline flex-row">
+                        <Calendar size={14} />
+                        <span>Son Teslim: {new Date(item.deadline).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      {item.status && getStatusBadge(item.status)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {filteredFeed.length === 0 && (
               <div className="empty-state card text-center">
                 <Bell size={48} className="empty-icon" />
                 <h3>Pano Temiz</h3>
                 <p>Şu an için sınıfınızda paylaşılan herhangi bir duyuru veya ödev bulunmamaktadır.</p>
               </div>
             )}
+
+            <Pagination
+              currentPage={feedPage}
+              totalPages={totalFeedPages}
+              onPageChange={setFeedPage}
+              totalItems={filteredFeed.length}
+              itemsPerPage={FEED_PER_PAGE}
+            />
           </div>
         </section>
       )}
 
       {/* 2. Ödevler & Teslimler Section */}
       {activePath === '/assignments' && (
-        <section className="dashboard-section animate-fade">
+        <section className="dashboard-section assignments-section animate-fade">
           <div className="section-header">
             <h2>Ödevlerim ve Teslimler</h2>
             <p>Atandığınız ödevlerin listesi ve teslim durumları</p>
           </div>
 
           <div className="assignments-grid grid">
-            {assignments.map((sa) => (
+            {paginatedAssignments.map((sa) => (
               <div key={sa.id} className="assignment-card card flex-col">
                 <div className="assignment-card-header flex-row">
                   <span className="class-name">{sa.assignment_details.classroom_name}</span>
@@ -386,6 +422,14 @@ export const StudentDashboard: React.FC = () => {
               </div>
             )}
           </div>
+
+          <Pagination
+            currentPage={assignmentPage}
+            totalPages={totalAssignmentPages}
+            onPageChange={setAssignmentPage}
+            totalItems={assignments.length}
+            itemsPerPage={ASSIGNMENTS_PER_PAGE}
+          />
         </section>
       )}
 
@@ -398,7 +442,7 @@ export const StudentDashboard: React.FC = () => {
             <div className="schedule-panel card flex-col">
               <h3 className="panel-title flex-row"><Calendar size={20} /> Haftalık Ders Programı</h3>
               <div className="schedule-list flex-col">
-                {schedules.map((s) => {
+                {paginatedSchedules.map((s) => {
                   const clName = classrooms.find((c) => c.id === s.classroom)?.name || 'Ders';
                   return (
                     <div key={s.id} className="schedule-item flex-row">
@@ -414,13 +458,21 @@ export const StudentDashboard: React.FC = () => {
                   <p className="empty-text">Ders programınız bulunmamaktadır.</p>
                 )}
               </div>
+
+              <Pagination
+                currentPage={schedulePage}
+                totalPages={totalSchedulePages}
+                onPageChange={setSchedulePage}
+                totalItems={schedules.length}
+                itemsPerPage={SCHEDULES_PER_PAGE}
+              />
             </div>
 
             {/* Attendance History */}
             <div className="attendance-panel card flex-col">
               <h3 className="panel-title flex-row"><CheckCircle2 size={20} /> Yoklama Geçmişi</h3>
               <div className="attendance-list flex-col">
-                {attendances.map((att) => (
+                {paginatedAttendances.map((att) => (
                   <div key={att.id} className="attendance-item flex-row">
                     <div className="att-info">
                       <h4>{att.session_details?.classroom_name}</h4>
@@ -439,6 +491,14 @@ export const StudentDashboard: React.FC = () => {
                   <p className="empty-text">Henüz işlenmiş bir ders yoklama kaydınız bulunmamaktadır.</p>
                 )}
               </div>
+
+              <Pagination
+                currentPage={attendancePage}
+                totalPages={totalAttendancePages}
+                onPageChange={setAttendancePage}
+                totalItems={attendances.length}
+                itemsPerPage={ATTENDANCE_PER_PAGE}
+              />
             </div>
 
           </div>
