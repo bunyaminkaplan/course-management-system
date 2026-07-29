@@ -581,9 +581,12 @@ export const InstructorDashboard: React.FC = () => {
                       .find(c => c.id === activeSession.classroom)
                       ?.students.find(s => s.id === item.studentId);
                     
+                    const name = student ? `${student.first_name || ''} ${student.last_name || ''}`.trim() : '';
+                    const displayName = name || student?.username || `Öğrenci #${item.studentId}`;
+                    
                     return (
                       <div key={item.studentId} className="attendance-roll-row flex-row">
-                        <span>{student ? `${student.first_name} ${student.last_name}` : `Öğrenci #${item.studentId}`}</span>
+                        <span>{displayName}</span>
                         <button 
                           className={`toggle-present-btn ${item.isPresent ? 'present' : 'absent'}`}
                           onClick={() => handleTogglePresent(item.studentId)}
@@ -641,7 +644,7 @@ export const InstructorDashboard: React.FC = () => {
                       </div>
                     </td>
                     <td>
-                      {sub.student_details ? `${sub.student_details.first_name} ${sub.student_details.last_name}` : `Öğrenci #${sub.student}`}
+                      {sub.student_details ? (`${sub.student_details.first_name || ''} ${sub.student_details.last_name || ''}`.trim() || sub.student_details.username) : `Öğrenci #${sub.student}`}
                     </td>
                     <td>
                       {sub.file_url ? (
@@ -685,7 +688,7 @@ export const InstructorDashboard: React.FC = () => {
           <div className="modal-card card glass animate-fade" onClick={(e) => e.stopPropagation()}>
             <h3>Ödev Değerlendirme</h3>
             <p className="modal-subtitle">
-              {selectedSubmission.student_details ? `${selectedSubmission.student_details.first_name} ${selectedSubmission.student_details.last_name}` : `Öğrenci #${selectedSubmission.student}`} - {selectedSubmission.assignment_details.title}
+              {selectedSubmission.student_details ? (`${selectedSubmission.student_details.first_name || ''} ${selectedSubmission.student_details.last_name || ''}`.trim() || selectedSubmission.student_details.username) : `Öğrenci #${selectedSubmission.student}`} - {selectedSubmission.assignment_details.title}
             </p>
 
             <form onSubmit={handleSaveGrade} className="modal-form flex-col">

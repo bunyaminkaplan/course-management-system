@@ -5,12 +5,62 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.db import models
 
+from datetime import timedelta
+from django.utils import timezone
+
 from .models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, Session, Attendance
 from .serializers import (
     UserSerializer, ClassRoomSerializer, AnnouncementSerializer, 
     AssignmentSerializer, StudentAssignmentSerializer, ScheduleSerializer, 
     SessionSerializer, AttendanceSerializer, FeedItemSerializer
 )
+
+def sync_daily_sessions():
+    now = timezone.localtime()
+    today = now.date()
+    weekday = today.weekday()
+
+    # 1. Create sessions for today based on weekly schedules matching today's weekday
+    schedules = Schedule.objects.filter(day_of_week=weekday)
+    for schedule in schedules:
+        Session.objects.get_or_create(
+            schedule=schedule,
+            classroom=schedule.classroom,
+            date=today,
+            defaults={'status': Session.Status.SCHEDULED}
+        )
+
+    # 2. Update status of today's SCHEDULED or READY sessions based on current time
+    sessions = Session.objects.filter(date=today, status__in=[Session.Status.SCHEDULED, Session.Status.READY])
+    for session in sessions:
+        if not session.schedule:
+            continue
+
+        start_time = session.schedule.start_time
+        end_time = session.schedule.end_time
+
+        start_dt = timezone.datetime.combine(today, start_time)
+        end_dt = timezone.datetime.combine(today, end_time)
+
+        if timezone.is_naive(start_dt):
+            start_dt = timezone.make_aware(start_dt)
+        if timezone.is_naive(end_dt):
+            end_dt = timezone.make_aware(end_dt)
+
+        ready_start = start_dt - timedelta(minutes=10)
+        ready_end = max(end_dt, start_dt + timedelta(minutes=10))
+
+        if session.status == Session.Status.SCHEDULED:
+            if ready_start <= now <= ready_end:
+                session.status = Session.Status.READY
+                session.save(update_fields=['status'])
+            elif now > ready_end:
+                session.status = Session.Status.MISSED
+                session.save(update_fields=['status'])
+        elif session.status == Session.Status.READY:
+            if now > ready_end:
+                session.status = Session.Status.MISSED
+                session.save(update_fields=['status'])
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -36,9 +86,21 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
 
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        sync_daily_sessions()
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        sync_daily_sessions()
+
 class SessionViewSet(viewsets.ModelViewSet):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
+
+    def get_queryset(self):
+        sync_daily_sessions()
+        return super().get_queryset()
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.all()
