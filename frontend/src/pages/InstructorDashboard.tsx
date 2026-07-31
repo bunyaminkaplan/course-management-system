@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Pagination } from '../components/Pagination';
 import { 
   BookOpen, 
   Users, 
@@ -124,14 +123,6 @@ export const InstructorDashboard: React.FC = () => {
   const [selectedSubmission, setSelectedSubmission] = useState<StudentAssignment | null>(null);
   const [gradeValue, setGradeValue] = useState<string>('');
   const [savingGrade, setSavingGrade] = useState(false);
-
-  // Pagination state
-  const [submissionPage, setSubmissionPage] = useState(1);
-  const SUBMISSIONS_PER_PAGE = 8;
-
-  const submittedList = submissions.filter(s => s.status === 'SUBMITTED');
-  const totalSubmissionPages = Math.ceil(submittedList.length / SUBMISSIONS_PER_PAGE);
-  const paginatedSubmissions = submittedList.slice((submissionPage - 1) * SUBMISSIONS_PER_PAGE, submissionPage * SUBMISSIONS_PER_PAGE);
 
   const fetchData = async () => {
     if (!user) return;
@@ -590,12 +581,9 @@ export const InstructorDashboard: React.FC = () => {
                       .find(c => c.id === activeSession.classroom)
                       ?.students.find(s => s.id === item.studentId);
                     
-                    const name = student ? `${student.first_name || ''} ${student.last_name || ''}`.trim() : '';
-                    const displayName = name || student?.username || `Öğrenci #${item.studentId}`;
-                    
                     return (
                       <div key={item.studentId} className="attendance-roll-row flex-row">
-                        <span>{displayName}</span>
+                        <span>{student ? `${student.first_name} ${student.last_name}` : `Öğrenci #${item.studentId}`}</span>
                         <button 
                           className={`toggle-present-btn ${item.isPresent ? 'present' : 'absent'}`}
                           onClick={() => handleTogglePresent(item.studentId)}
@@ -644,7 +632,7 @@ export const InstructorDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedSubmissions.map((sub) => (
+                {submissions.filter(s => s.status === 'SUBMITTED').map((sub) => (
                   <tr key={sub.id}>
                     <td>
                       <div className="sub-td-class">
@@ -653,7 +641,7 @@ export const InstructorDashboard: React.FC = () => {
                       </div>
                     </td>
                     <td>
-                      {sub.student_details ? (`${sub.student_details.first_name || ''} ${sub.student_details.last_name || ''}`.trim() || sub.student_details.username) : `Öğrenci #${sub.student}`}
+                      {sub.student_details ? `${sub.student_details.first_name} ${sub.student_details.last_name}` : `Öğrenci #${sub.student}`}
                     </td>
                     <td>
                       {sub.file_url ? (
@@ -677,7 +665,7 @@ export const InstructorDashboard: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-                {submittedList.length === 0 && (
+                {submissions.filter(s => s.status === 'SUBMITTED').length === 0 && (
                   <tr>
                     <td colSpan={6} className="text-center empty-td">
                       <FileText size={36} className="empty-icon" style={{ margin: '1rem auto' }} />
@@ -687,14 +675,6 @@ export const InstructorDashboard: React.FC = () => {
                 )}
               </tbody>
             </table>
-
-            <Pagination
-              currentPage={submissionPage}
-              totalPages={totalSubmissionPages}
-              onPageChange={setSubmissionPage}
-              totalItems={submittedList.length}
-              itemsPerPage={SUBMISSIONS_PER_PAGE}
-            />
           </div>
         </div>
       )}
@@ -705,7 +685,7 @@ export const InstructorDashboard: React.FC = () => {
           <div className="modal-card card glass animate-fade" onClick={(e) => e.stopPropagation()}>
             <h3>Ödev Değerlendirme</h3>
             <p className="modal-subtitle">
-              {selectedSubmission.student_details ? (`${selectedSubmission.student_details.first_name || ''} ${selectedSubmission.student_details.last_name || ''}`.trim() || selectedSubmission.student_details.username) : `Öğrenci #${selectedSubmission.student}`} - {selectedSubmission.assignment_details.title}
+              {selectedSubmission.student_details ? `${selectedSubmission.student_details.first_name} ${selectedSubmission.student_details.last_name}` : `Öğrenci #${selectedSubmission.student}`} - {selectedSubmission.assignment_details.title}
             </p>
 
             <form onSubmit={handleSaveGrade} className="modal-form flex-col">

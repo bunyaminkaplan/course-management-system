@@ -12,6 +12,10 @@ def get_python_venv_cmd():
     return os.path.join(venv_dir, 'bin', 'python')
 
 def main():
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
     print("🚀 KBS Portal Baslatiliyor...")
     
     backend_dir = os.path.join(os.getcwd(), 'backend')
@@ -27,7 +31,7 @@ def main():
 
     print("-> Backend (Django) sunucusu baslatiliyor...")
     backend_process = subprocess.Popen(
-        [python_venv_cmd, 'manage.py', 'runserver'],
+        [python_venv_cmd, 'manage.py', 'runserver', '127.0.0.1:8001'],
         cwd=backend_dir
     )
 

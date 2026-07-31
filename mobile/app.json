@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "CourseManagementMobile",
+    "slug": "course-management-mobile",
+    "version": "1.0.0",
+    "ios": {
+      "bundleIdentifier": "com.projeadi.app"
+    },
+    "android": {
+      "package": "com.projeadi.app"
+    },
+    "splash": {
+      "backgroundColor": "#262F59"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 28,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 35,
+            "ndkVersion": "27.1.12297006",
+            "extraMavenRepos": [
+              "https://europe-west3-maven.pkg.dev/talsec-artifact-repository/freerasp"
+            ]
+          }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Uygulamanın arka planda ve kullanım sırasında konumunuza erişmesi gereklidir."
+        }
+      ],
+      "@sentry/react-native",
+      "expo-localization",
+      "expo-secure-store"
+    ]
+  }
+}

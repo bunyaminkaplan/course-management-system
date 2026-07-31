@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, Session, Attendance
+from .models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, Session, Attendance, ParentStudent, Exam, Grade
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
@@ -51,14 +51,14 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Assignment
-        fields = ['id', 'classroom', 'classroom_name', 'title', 'description', 'deadline', 'created_at']
+        fields = ['id', 'classroom', 'classroom_name', 'title', 'description', 'deadline', 'attachment', 'created_at']
 
 class StudentAssignmentSerializer(serializers.ModelSerializer):
     assignment_details = AssignmentSerializer(source='assignment', read_only=True)
 
     class Meta:
         model = StudentAssignment
-        fields = ['id', 'assignment', 'assignment_details', 'student', 'status', 'file_url', 'grade', 'submitted_at']
+        fields = ['id', 'assignment', 'assignment_details', 'student', 'status', 'file_url', 'submitted_file', 'grade', 'submitted_at']
 
 class ScheduleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -74,6 +74,27 @@ class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
         fields = '__all__'
+
+class ParentStudentSerializer(serializers.ModelSerializer):
+    student_detail = UserSerializer(source='student', read_only=True)
+
+    class Meta:
+        model = ParentStudent
+        fields = ['id', 'parent', 'student', 'student_detail']
+
+class ExamSerializer(serializers.ModelSerializer):
+    classroom_name = serializers.CharField(source='classroom.name', read_only=True)
+
+    class Meta:
+        model = Exam
+        fields = ['id', 'classroom', 'classroom_name', 'title', 'date', 'document_url', 'created_at']
+
+class GradeSerializer(serializers.ModelSerializer):
+    student_detail = UserSerializer(source='student', read_only=True)
+
+    class Meta:
+        model = Grade
+        fields = ['id', 'exam', 'student', 'student_detail', 'grade']
 
 # Custom Serializer for Aggregated Feed
 class FeedItemSerializer(serializers.Serializer):

@@ -7,6 +7,7 @@ class User(AbstractUser):
         ADMIN = 'ADMIN', 'Admin'
         INSTRUCTOR = 'INSTRUCTOR', 'Instructor'
         STUDENT = 'STUDENT', 'Student'
+        PARENT = 'PARENT', 'Parent'
 
     role = models.CharField(max_length=15, choices=Role.choices, default=Role.STUDENT)
 
@@ -37,8 +38,9 @@ class Announcement(models.Model):
 class Assignment(models.Model):
     classroom = models.ForeignKey(ClassRoom, on_delete=models.CASCADE, related_name='assignments')
     title = models.CharField(max_length=200)
-    description = models.TextField()
+    description = models.TextField(blank=True, null=True)
     deadline = models.DateTimeField()
+    attachment = models.FileField(upload_to='assignments/attachments/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -49,12 +51,15 @@ class StudentAssignment(models.Model):
     class Status(models.TextChoices):
         PENDING = 'PENDING', 'Pending'
         SUBMITTED = 'SUBMITTED', 'Submitted'
+        APPROVED = 'APPROVED', 'Approved'
+        REJECTED = 'REJECTED', 'Rejected'
         OVERDUE = 'OVERDUE', 'Overdue'
 
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='student_assignments')
     student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': User.Role.STUDENT})
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.PENDING)
     file_url = models.URLField(blank=True, null=True)
+    submitted_file = models.FileField(upload_to='assignments/submissions/', blank=True, null=True)
     grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
 
@@ -113,6 +118,40 @@ class Attendance(models.Model):
         return f"{self.student.username} - {self.session} (Present: {self.is_present})"
 
 
+class ParentStudent(models.Model):
+    parent = models.ForeignKey(User, on_delete=models.CASCADE, related_name='children_links', limit_choices_to={'role': User.Role.PARENT})
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='parent_links', limit_choices_to={'role': User.Role.STUDENT})
+
+    class Meta:
+        unique_together = ('parent', 'student')
+
+    def __str__(self):
+        return f"{self.parent.username} -> {self.student.username}"
+
+
+class Exam(models.Model):
+    classroom = models.ForeignKey(ClassRoom, on_delete=models.CASCADE, related_name='exams')
+    title = models.CharField(max_length=200)
+    date = models.DateField()
+    document_url = models.URLField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.classroom.name}"
+
+
+class Grade(models.Model):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='grades')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='grades', limit_choices_to={'role': User.Role.STUDENT})
+    grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('exam', 'student')
+
+    def __str__(self):
+        return f"{self.student.username} - {self.exam.title}: {self.grade}"
+
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -125,3 +164,13 @@ def create_student_assignments(sender, instance, created, **kwargs):
             for student in students
         ]
         StudentAssignment.objects.bulk_create(student_assignments)
+
+@receiver(post_save, sender=Exam)
+def create_student_grades(sender, instance, created, **kwargs):
+    if created:
+        students = instance.classroom.students.all()
+        student_grades = [
+            Grade(exam=instance, student=student, grade=None)
+            for student in students
+        ]
+        Grade.objects.bulk_create(student_grades)

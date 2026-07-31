@@ -8,7 +8,7 @@ from django.utils import timezone
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'course_backend.settings')
 django.setup()
 
-from core.models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule
+from core.models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, ParentStudent, Exam, Grade
 
 admin, created_a = User.objects.get_or_create(
     username='admin', 
@@ -33,12 +33,20 @@ if created_i:
     instructor.set_password('password123')
     instructor.save()
 
+parent, created_p = User.objects.get_or_create(username='parent1', defaults={'email': 'parent1@test.com', 'role': User.Role.PARENT, 'first_name': 'Veli', 'last_name': 'Yılmaz'})
+if created_p:
+    parent.set_password('password123')
+    parent.save()
+
 # 1. Sınıf Oluştur ve Kullanıcıları Ekle
 classroom, _ = ClassRoom.objects.get_or_create(
     name="Matematik 101"
 )
 classroom.instructors.add(instructor)
 classroom.students.add(student)
+
+# 1.1 Veli Öğrenci Bağlantısı
+ParentStudent.objects.get_or_create(parent=parent, student=student)
 
 # 2. Ders Programı (Schedule) Oluştur (Bugünün gününe)
 today = timezone.localtime()
@@ -72,5 +80,17 @@ old_assignment, _ = Assignment.objects.get_or_create(
     description="Bu ödevin süresi dün doldu.",
     deadline=today - timedelta(days=1)
 )
+
+# 6. Sınav ve Not Oluştur
+exam, _ = Exam.objects.get_or_create(
+    classroom=classroom,
+    title="Vize Sınavı",
+    date=today.date() + timedelta(days=5)
+)
+# Note: post_save signal automatically creates Grade for enrolled students
+grade = Grade.objects.filter(exam=exam, student=student).first()
+if grade:
+    grade.grade = 85.0
+    grade.save()
 
 print("Dummy data seeded successfully!")
