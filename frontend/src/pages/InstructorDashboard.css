@@ -229,25 +229,13 @@
 .submissions-table-card {
   overflow-x: auto;
   padding: 0;
-  min-height: 680px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
 .submissions-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  table-layout: fixed;
 }
-
-.submissions-table th:nth-child(1) { width: 26%; }
-.submissions-table th:nth-child(2) { width: 20%; }
-.submissions-table th:nth-child(3) { width: 16%; }
-.submissions-table th:nth-child(4) { width: 15%; }
-.submissions-table th:nth-child(5) { width: 11%; }
-.submissions-table th:nth-child(6) { width: 12%; }
 
 .submissions-table th {
   background-color: hsl(var(--bg-tertiary));
@@ -259,12 +247,9 @@
 }
 
 .submissions-table td {
-  padding: 0.85rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid hsl(var(--border));
   font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .submissions-table tr:last-child td {

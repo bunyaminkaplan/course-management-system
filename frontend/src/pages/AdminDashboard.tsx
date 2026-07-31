@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Pagination } from '../components/Pagination';
 import { 
   Clock, 
   Trash2, 
@@ -73,17 +72,6 @@ export const AdminDashboard: React.FC = () => {
   const [schedStartTime, setSchedStartTime] = useState('09:00');
   const [schedEndTime, setSchedEndTime] = useState('10:30');
   const [creatingSchedule, setCreatingSchedule] = useState(false);
-
-  // Pagination states
-  const [usersPage, setUsersPage] = useState(1);
-  const [schedulesPage, setSchedulesPage] = useState(1);
-  const ITEMS_PER_PAGE = 8;
-
-  const totalUserPages = Math.ceil(users.length / ITEMS_PER_PAGE);
-  const paginatedUsers = users.slice((usersPage - 1) * ITEMS_PER_PAGE, usersPage * ITEMS_PER_PAGE);
-
-  const totalSchedulePages = Math.ceil(schedules.length / ITEMS_PER_PAGE);
-  const paginatedSchedules = schedules.slice((schedulesPage - 1) * ITEMS_PER_PAGE, schedulesPage * ITEMS_PER_PAGE);
 
   const fetchData = async () => {
     setLoading(true);
@@ -346,7 +334,7 @@ export const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedUsers.map((u) => (
+                  {users.map((u) => (
                     <tr key={u.id}>
                       <td>{`${u.first_name} ${u.last_name}`.trim() || '-'}</td>
                       <td><strong>{u.username}</strong></td>
@@ -367,21 +355,8 @@ export const AdminDashboard: React.FC = () => {
                       </td>
                     </tr>
                   ))}
-                  {users.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="text-center">Kullanıcı bulunmamaktadır.</td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
-
-              <Pagination
-                currentPage={usersPage}
-                totalPages={totalUserPages}
-                onPageChange={setUsersPage}
-                totalItems={users.length}
-                itemsPerPage={ITEMS_PER_PAGE}
-              />
             </div>
           </div>
 
@@ -608,7 +583,7 @@ export const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedSchedules.map((s) => (
+                  {schedules.map((s) => (
                     <tr key={s.id}>
                       <td><strong>{s.classroom_name}</strong></td>
                       <td>{getDayOfWeekName(s.day_of_week)}</td>
@@ -628,14 +603,6 @@ export const AdminDashboard: React.FC = () => {
                   )}
                 </tbody>
               </table>
-
-              <Pagination
-                currentPage={schedulesPage}
-                totalPages={totalSchedulePages}
-                onPageChange={setSchedulesPage}
-                totalItems={schedules.length}
-                itemsPerPage={ITEMS_PER_PAGE}
-              />
             </div>
           </div>
 

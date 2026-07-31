@@ -40,10 +40,14 @@ def get_python_cmd():
     return 'python' if platform.system() == 'Windows' else 'python3'
 
 def main():
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
     print(f"{Colors.HEADER}{Colors.BOLD}=== KBS Portal Otomatik Kurulum Araci ==={Colors.ENDC}\n")
 
     # 1. Projeyi Indirme (Git Clone)
-    repo_url = 'https://github.com/bunyaminkaplan/course-management-system.git'
+    repo_url = ''
     project_dir = os.getcwd()
 
     if repo_url:

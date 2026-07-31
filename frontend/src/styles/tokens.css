@@ -14,19 +14,17 @@
   --bg-secondary: 0 0% 100%;       /* #ffffff */
   --bg-tertiary: 210 20% 95%;      /* #f1f5f9 */
   --text-primary: 220 40% 10%;     /* #0f172a */
-  --text-secondary: 60 0% 45%;     /* #727271 (Gri) */
+  --text-secondary: 215 15% 40%;   /* #475569 */
   --text-tertiary: 215 15% 60%;    /* #94a3b8 */
   
-  --primary: 192 84% 44%;          /* #12A7CD (Turkuaz) */
-  --primary-hover: 192 84% 38%;
-  --primary-light: 192 100% 96%;
-  
-  --accent-gold: 36 34% 58%;       /* #B99C71 (Gold) */
+  --primary: 243 75% 59%;          /* Indigo 600 */
+  --primary-hover: 244 75% 50%;
+  --primary-light: 243 100% 96%;
   
   --success: 142 70% 45%;          /* Emerald 600 */
   --success-light: 142 80% 95%;
-  --warning: 28 87% 52%;           /* #EF7F1A (Turuncu) */
-  --warning-light: 28 100% 96%;
+  --warning: 38 90% 50%;           /* Amber 600 */
+  --warning-light: 38 100% 96%;
   --danger: 0 84% 60%;             /* Rose 600 */
   --danger-light: 0 100% 96%;
   
@@ -35,9 +33,9 @@
   --glass-bg: 0 0% 100% / 0.7;
   --glass-border: 0 0% 100% / 0.5;
   
-  --sidebar-bg: 229 40% 25%;       /* #262F59 (Mavi) */
+  --sidebar-bg: 222 47% 11%;       /* Slate 900 */
   --sidebar-text: 210 40% 96%;     /* Slate 100 */
-  --sidebar-hover: 229 33% 30%;
+  --sidebar-hover: 217 33% 17%;
   
   /* Transitions */
   --transition-fast: 0.15s ease;
@@ -65,19 +63,17 @@
     --bg-secondary: 222 47% 7%;      /* Slate 900 */
     --bg-tertiary: 217 33% 12%;      /* Slate 800 */
     --text-primary: 210 40% 98%;     /* Slate 50 */
-    --text-secondary: 60 0% 65%;     /* Gri (Lighter) */
+    --text-secondary: 215 20% 75%;   /* Slate 300 */
     --text-tertiary: 215 15% 50%;    /* Slate 500 */
     
-    --primary: 192 84% 55%;          /* Turkuaz (Lighter for dark mode) */
-    --primary-hover: 192 84% 60%;
-    --primary-light: 192 100% 15%;
-    
-    --accent-gold: 36 34% 65%;       /* Gold (Lighter for dark mode) */
+    --primary: 245 100% 70%;         /* Vibrant purple-blue */
+    --primary-hover: 245 100% 75%;
+    --primary-light: 245 100% 15%;
     
     --success: 142 70% 40%;
     --success-light: 142 80% 10%;
-    --warning: 28 87% 60%;           /* Turuncu (Lighter) */
-    --warning-light: 28 100% 10%;
+    --warning: 38 90% 45%;
+    --warning-light: 38 100% 10%;
     --danger: 0 84% 55%;
     --danger-light: 0 100% 10%;
     
@@ -86,7 +82,7 @@
     --glass-bg: 222 47% 7% / 0.7;
     --glass-border: 217 33% 15% / 0.5;
     
-    --sidebar-bg: 229 40% 15%;       /* Mavi (Darker for dark mode sidebar) */
+    --sidebar-bg: 224 71% 4%;
     --sidebar-text: 210 40% 98%;
-    --sidebar-hover: 229 40% 20%;
+    --sidebar-hover: 217 33% 10%;
 }
