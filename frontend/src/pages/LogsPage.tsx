@@ -159,7 +159,8 @@ export const LogsPage: React.FC = () => {
       'SUBMISSION': 'Teslim & Notlandırma',
       'ATTENDANCE': 'Yoklama',
       'SCHEDULE': 'Ders Programı',
-      'FORUM': 'Forum'
+      'FORUM': 'Forum',
+      'EXAM': 'Sınav & Deneme'
     };
     return <span className={`category-badge ${lower}`}>{map[cat] || cat}</span>;
   };
@@ -229,6 +230,7 @@ export const LogsPage: React.FC = () => {
             <option value="ATTENDANCE">Yoklama</option>
             <option value="SCHEDULE">Ders Programı</option>
             <option value="FORUM">Forum</option>
+            <option value="EXAM">Sınav & Deneme</option>
           </select>
         </div>
 

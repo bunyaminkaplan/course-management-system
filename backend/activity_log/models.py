@@ -11,6 +11,7 @@ class ActivityLog(models.Model):
         ('ATTENDANCE', 'ATTENDANCE'),
         ('SCHEDULE', 'SCHEDULE'),
         ('FORUM', 'FORUM'),
+        ('EXAM', 'EXAM'),
     ]
     STATUS_CHOICES = [
         ('SUCCESS', 'SUCCESS'),

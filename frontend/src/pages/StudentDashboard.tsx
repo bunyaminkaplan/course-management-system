@@ -13,9 +13,29 @@ import {
   BookOpen, 
   Upload, 
   Award,
-  AlertCircle
+  AlertCircle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import './StudentDashboard.css';
+
+interface ExamSubjectScore {
+  id?: number;
+  subject_name: string;
+  correct: number;
+  incorrect: number;
+  net_score?: number;
+}
+interface PracticeExam {
+  id?: number;
+  student: number;
+  classroom: number;
+  title: string;
+  date: string;
+  total_net?: number;
+  subject_scores: ExamSubjectScore[];
+}
 
 interface FeedItem {
   id: number;
@@ -89,6 +109,7 @@ export const StudentDashboard: React.FC = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [practiceExams, setPracticeExams] = useState<PracticeExam[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,11 +128,14 @@ export const StudentDashboard: React.FC = () => {
   const [assignmentPage, setAssignmentPage] = useState(1);
   const [attendancePage, setAttendancePage] = useState(1);
   const [schedulePage, setSchedulePage] = useState(1);
+  const [examPage, setExamPage] = useState(1);
+  const [expandedExam, setExpandedExam] = useState<number | null>(null);
 
   const FEED_PER_PAGE = 5;
   const ASSIGNMENTS_PER_PAGE = 6;
   const ATTENDANCE_PER_PAGE = 8;
   const SCHEDULES_PER_PAGE = 8;
+  const EXAMS_PER_PAGE = 5;
 
   const filteredFeed = feed.filter(item => feedFilter === 'ALL' || item.type === feedFilter);
   const totalFeedPages = Math.ceil(filteredFeed.length / FEED_PER_PAGE);
@@ -125,6 +149,16 @@ export const StudentDashboard: React.FC = () => {
 
   const totalSchedulePages = Math.ceil(schedules.length / SCHEDULES_PER_PAGE);
   const paginatedSchedules = schedules.slice((schedulePage - 1) * SCHEDULES_PER_PAGE, schedulePage * SCHEDULES_PER_PAGE);
+
+  const sortedExams = [...practiceExams].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const totalExamPages = Math.ceil(sortedExams.length / EXAMS_PER_PAGE);
+  const paginatedExams = sortedExams.slice((examPage - 1) * EXAMS_PER_PAGE, examPage * EXAMS_PER_PAGE);
+
+  const chartData = [...sortedExams].reverse().map(exam => ({
+    name: new Date(exam.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
+    net: exam.total_net || 0,
+    title: exam.title
+  }));
 
   const handleFilterChange = (filter: 'ALL' | 'ANNOUNCEMENT' | 'ASSIGNMENT') => {
     setFeedFilter(filter);
@@ -175,6 +209,14 @@ export const StudentDashboard: React.FC = () => {
         };
       });
       setAttendances(mappedAtt);
+
+      // 6. Fetch Practice Exams
+      try {
+        const examData: PracticeExam[] = await api.get('/api/practice-exams/');
+        setPracticeExams(examData.filter(e => e.student === user.id));
+      } catch (err) {
+        console.error("Practice exams not available", err);
+      }
 
     } catch (err: any) {
       setError(err.message || 'Veriler yüklenirken bir hata oluştu.');
@@ -501,6 +543,117 @@ export const StudentDashboard: React.FC = () => {
               />
             </div>
 
+          </div>
+        </section>
+      )}
+
+      {/* 4. Deneme Geçmişim Section */}
+      {activePath === '/practice-exams' && (
+        <section className="dashboard-section animate-fade">
+          <div className="section-header">
+            <h2>Deneme Sınavı Geçmişim</h2>
+            <p>Girdiğiniz deneme sınavlarının netleri ve detaylı analizleri</p>
+          </div>
+
+          <div className="exam-chart-card card" style={{ height: '350px', marginBottom: '2rem' }}>
+            <h3 className="panel-title flex-row"><Award size={20} /> Net Gelişimi</h3>
+            <div style={{ width: '100%', height: '280px' }}>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                    <XAxis dataKey="name" stroke="var(--text-secondary)" />
+                    <YAxis stroke="var(--text-secondary)" />
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)' }}
+                      itemStyle={{ color: 'var(--primary-color)' }}
+                    />
+                    <Line type="monotone" dataKey="net" stroke="var(--primary-color)" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 8 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex-col" style={{ height: '100%', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)' }}>
+                  <Award size={48} opacity={0.5} style={{ marginBottom: '1rem' }} />
+                  <p>Henüz deneme sınavı veriniz bulunmamaktadır.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="exam-table-card card">
+            <h3 className="panel-title flex-row"><FileText size={20} /> Sınav Detayları</h3>
+            
+            <div className="exam-list flex-col">
+              {paginatedExams.map((exam) => {
+                const isExpanded = expandedExam === exam.id;
+                return (
+                  <div key={exam.id} className="exam-item-container" style={{ border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '1rem', overflow: 'hidden' }}>
+                    <div 
+                      className="exam-item-header flex-row" 
+                      style={{ padding: '1rem', background: 'var(--bg-secondary)', cursor: 'pointer', justifyContent: 'space-between' }}
+                      onClick={() => setExpandedExam(isExpanded ? null : (exam.id as number))}
+                    >
+                      <div className="exam-info flex-row" style={{ gap: '2rem' }}>
+                        <div>
+                          <strong style={{ display: 'block', fontSize: '1.1rem' }}>{exam.title}</strong>
+                          <span className="text-secondary" style={{ fontSize: '0.9rem' }}>{new Date(exam.date).toLocaleDateString('tr-TR')}</span>
+                        </div>
+                        <div className="exam-net flex-col" style={{ alignItems: 'flex-start' }}>
+                          <span className="text-secondary" style={{ fontSize: '0.8rem' }}>Toplam Net</span>
+                          <strong className="primary-text" style={{ fontSize: '1.2rem' }}>{exam.total_net?.toFixed(2) || '0.00'}</strong>
+                        </div>
+                      </div>
+                      <div className="expand-icon">
+                        {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                      </div>
+                    </div>
+                    
+                    {isExpanded && (
+                      <div className="exam-item-body animate-fade" style={{ padding: '1rem' }}>
+                        <table className="submissions-table" style={{ margin: 0, width: '100%', textAlign: 'left' }}>
+                          <thead>
+                            <tr>
+                              <th>Ders Adı</th>
+                              <th>Doğru</th>
+                              <th>Yanlış</th>
+                              <th>Net</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {exam.subject_scores.map((score, idx) => (
+                              <tr key={idx}>
+                                <td><strong>{score.subject_name}</strong></td>
+                                <td className="success-text">{score.correct}</td>
+                                <td className="danger-text">{score.incorrect}</td>
+                                <td><strong>{score.net_score?.toFixed(2) || '0.00'}</strong></td>
+                              </tr>
+                            ))}
+                            {exam.subject_scores.length === 0 && (
+                              <tr>
+                                <td colSpan={4} className="text-center">Detay bulunamadı.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {practiceExams.length === 0 && (
+                <p className="empty-text text-center" style={{ padding: '2rem' }}>Sınav geçmişiniz bulunmamaktadır.</p>
+              )}
+            </div>
+
+            {totalExamPages > 1 && (
+              <Pagination
+                currentPage={examPage}
+                totalPages={totalExamPages}
+                onPageChange={setExamPage}
+                totalItems={sortedExams.length}
+                itemsPerPage={EXAMS_PER_PAGE}
+              />
+            )}
           </div>
         </section>
       )}

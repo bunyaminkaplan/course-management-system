@@ -89,6 +89,14 @@ export const App: React.FC = () => {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/practice-exams" 
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              } 
+            />
 
             {/* Instructor Sub-routes */}
             <Route 
@@ -101,6 +109,14 @@ export const App: React.FC = () => {
             />
             <Route 
               path="/instructor-assignments" 
+              element={
+                <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
+                  <InstructorDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/instructor-practice-exams" 
               element={
                 <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
                   <InstructorDashboard />

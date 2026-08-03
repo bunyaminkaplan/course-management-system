@@ -10,11 +10,12 @@ from django.db import models
 from datetime import timedelta
 from django.utils import timezone
 
-from .models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, Session, Attendance
+from .models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, Session, Attendance, PracticeExam, ExamSubjectScore
 from .serializers import (
     UserSerializer, ClassRoomSerializer, AnnouncementSerializer, 
     AssignmentSerializer, StudentAssignmentSerializer, ScheduleSerializer, 
-    SessionSerializer, AttendanceSerializer, FeedItemSerializer
+    SessionSerializer, AttendanceSerializer, FeedItemSerializer,
+    PracticeExamSerializer, ExamSubjectScoreSerializer
 )
 from activity_log.mixins import ActivityLogMixin
 from activity_log.utils import log_activity
@@ -423,3 +424,33 @@ class FeedAPIView(APIView):
         
         serializer = FeedItemSerializer(feed_items, many=True)
         return Response(serializer.data)
+
+
+class PracticeExamViewSet(ActivityLogMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PracticeExamSerializer
+    log_category = 'EXAM'
+    log_action_create = 'CREATE_EXAM'
+    log_display_create = 'Deneme sınavı eklendi'
+    log_action_update = 'UPDATE_EXAM'
+    log_display_update = 'Deneme sınavı güncellendi'
+    log_action_destroy = 'DELETE_EXAM'
+    log_display_destroy = 'Deneme sınavı silindi'
+
+    def get_log_details(self, instance, action):
+        return {
+            'student': instance.student.username,
+            'exam': instance.title,
+            'net': instance.total_net
+        }
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_anonymous:
+            return PracticeExam.objects.none()
+        if user.role == User.Role.ADMIN:
+            return PracticeExam.objects.all().order_by('-date', '-created_at')
+        elif user.role == User.Role.INSTRUCTOR:
+            return PracticeExam.objects.filter(classroom__instructors=user).order_by('-date', '-created_at')
+        else: # STUDENT
+            return PracticeExam.objects.filter(student=user).order_by('-date', '-created_at')

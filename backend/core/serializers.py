@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, Session, Attendance
+from .models import User, ClassRoom, Announcement, Assignment, StudentAssignment, Schedule, Session, Attendance, PracticeExam, ExamSubjectScore
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
@@ -87,3 +87,41 @@ class FeedItemSerializer(serializers.Serializer):
     # Assignment specific fields
     deadline = serializers.DateTimeField(required=False, allow_null=True)
     status = serializers.CharField(required=False, allow_null=True) # Student assignment status
+
+
+class ExamSubjectScoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExamSubjectScore
+        fields = ['id', 'subject_name', 'correct', 'incorrect', 'net_score']
+        read_only_fields = ['net_score']
+
+class PracticeExamSerializer(serializers.ModelSerializer):
+    subject_scores = ExamSubjectScoreSerializer(many=True)
+
+    class Meta:
+        model = PracticeExam
+        fields = ['id', 'student', 'classroom', 'title', 'date', 'total_net', 'created_at', 'subject_scores']
+        read_only_fields = ['total_net']
+
+    def create(self, validated_data):
+        subject_scores_data = validated_data.pop('subject_scores', [])
+        exam = PracticeExam.objects.create(**validated_data)
+        
+        total_net = 0.0
+        for score_data in subject_scores_data:
+            correct = score_data.get('correct', 0)
+            incorrect = score_data.get('incorrect', 0)
+            net_score = correct - (incorrect / 4.0)
+            total_net += net_score
+            
+            ExamSubjectScore.objects.create(
+                exam=exam,
+                subject_name=score_data.get('subject_name'),
+                correct=correct,
+                incorrect=incorrect,
+                net_score=net_score
+            )
+            
+        exam.total_net = total_net
+        exam.save()
+        return exam

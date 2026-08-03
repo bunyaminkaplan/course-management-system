@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 class User(AbstractUser):
     class Role(models.TextChoices):
@@ -125,3 +126,26 @@ def create_student_assignments(sender, instance, created, **kwargs):
             for student in students
         ]
         StudentAssignment.objects.bulk_create(student_assignments)
+
+
+class PracticeExam(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='practice_exams', on_delete=models.CASCADE)
+    classroom = models.ForeignKey(ClassRoom, related_name='practice_exams', on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    date = models.DateField()
+    total_net = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.title} - {self.student.username}"
+
+
+class ExamSubjectScore(models.Model):
+    exam = models.ForeignKey(PracticeExam, related_name='subject_scores', on_delete=models.CASCADE)
+    subject_name = models.CharField(max_length=100)
+    correct = models.IntegerField(default=0)
+    incorrect = models.IntegerField(default=0)
+    net_score = models.FloatField(default=0.0)
+    
+    def __str__(self):
+        return f"{self.subject_name} - {self.exam.title}"

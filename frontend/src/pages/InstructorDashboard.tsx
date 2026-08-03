@@ -14,10 +14,28 @@ import {
   Clock,
   Play,
   CheckCircle,
-  ExternalLink
+  ExternalLink,
+  X
 } from 'lucide-react';
 import { useLocation as useRouterLocation } from 'react-router-dom';
 import './InstructorDashboard.css';
+
+interface ExamSubjectScore {
+  id?: number;
+  subject_name: string;
+  correct: number;
+  incorrect: number;
+  net_score?: number;
+}
+interface PracticeExam {
+  id?: number;
+  student: number; // student id
+  classroom: number; // classroom id
+  title: string;
+  date: string;
+  total_net?: number;
+  subject_scores: ExamSubjectScore[];
+}
 
 interface Classroom {
   id: number;
@@ -128,6 +146,14 @@ export const InstructorDashboard: React.FC = () => {
   // Pagination state
   const [submissionPage, setSubmissionPage] = useState(1);
   const SUBMISSIONS_PER_PAGE = 8;
+
+  // Practice Exam Form State
+  const [examClassId, setExamClassId] = useState<string>('');
+  const [examStudentId, setExamStudentId] = useState<string>('');
+  const [examTitle, setExamTitle] = useState('');
+  const [examDate, setExamDate] = useState('');
+  const [examSubjects, setExamSubjects] = useState<Omit<ExamSubjectScore, 'id' | 'net_score'>[]>([{ subject_name: '', correct: 0, incorrect: 0 }]);
+  const [savingExam, setSavingExam] = useState(false);
 
   const submittedList = submissions.filter(s => s.status === 'SUBMITTED');
   const totalSubmissionPages = Math.ceil(submittedList.length / SUBMISSIONS_PER_PAGE);
@@ -364,6 +390,74 @@ export const InstructorDashboard: React.FC = () => {
       alert(err.message || 'Not kaydedilemedi.');
     } finally {
       setSavingGrade(false);
+    }
+  };
+
+  const handleAddExamSubject = () => {
+    setExamSubjects([...examSubjects, { subject_name: '', correct: 0, incorrect: 0 }]);
+  };
+
+  const handleUpdateExamSubject = (index: number, field: keyof Omit<ExamSubjectScore, 'id' | 'net_score'>, value: string | number) => {
+    const updated = [...examSubjects];
+    updated[index] = { ...updated[index], [field]: value };
+    setExamSubjects(updated);
+  };
+
+  const handleRemoveExamSubject = (index: number) => {
+    if (examSubjects.length === 1) return;
+    setExamSubjects(examSubjects.filter((_, i) => i !== index));
+  };
+
+  const calculateExamTotalNet = () => {
+    return examSubjects.reduce((total, sub) => {
+      const c = parseInt(String(sub.correct), 10);
+      const inc = parseInt(String(sub.incorrect), 10);
+      const net = (isNaN(c) ? 0 : c) - (isNaN(inc) ? 0 : inc) / 4;
+      return total + net;
+    }, 0);
+  };
+
+  const handleSaveExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!examClassId || !examStudentId || !examTitle.trim() || !examDate) {
+      alert('Lütfen tüm zorunlu alanları doldurun.');
+      return;
+    }
+    const validSubjects = examSubjects.filter(s => s.subject_name.trim());
+    if (validSubjects.length === 0) {
+      alert('En az bir ders eklemelisiniz.');
+      return;
+    }
+
+    setSavingExam(true);
+    try {
+      const payload = {
+        classroom: Number(examClassId),
+        student: Number(examStudentId),
+        title: examTitle,
+        date: examDate,
+        subject_scores: validSubjects.map(s => {
+          const c = parseInt(String(s.correct), 10);
+          const inc = parseInt(String(s.incorrect), 10);
+          return {
+            subject_name: s.subject_name,
+            correct: isNaN(c) ? 0 : c,
+            incorrect: isNaN(inc) ? 0 : inc
+          };
+        })
+      };
+      
+      await api.post('/api/practice-exams/', payload);
+      alert('Sınav sonucu başarıyla eklendi.');
+      
+      // Reset form
+      setExamTitle('');
+      setExamDate('');
+      setExamSubjects([{ subject_name: '', correct: 0, incorrect: 0 }]);
+    } catch (err: any) {
+      alert(err.message || 'Sınav sonucu eklenirken bir hata oluştu.');
+    } finally {
+      setSavingExam(false);
     }
   };
 
@@ -730,6 +824,145 @@ export const InstructorDashboard: React.FC = () => {
                 </button>
                 <button type="submit" className="primary" disabled={savingGrade}>
                   {savingGrade ? 'Kaydediliyor...' : 'Kaydet'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 4: Sınav Sonuçları Ekleme (Practice Exams) */}
+      {activePath === '/instructor-practice-exams' && (
+        <div className="practice-exam-layout flex-col animate-fade">
+          <div className="section-header">
+            <h2>Deneme Sınavı Sonuçları</h2>
+            <p>Öğrencileriniz için deneme sınavı sonuçları girin</p>
+          </div>
+
+          <div className="exam-form-card card">
+            <h3 className="panel-title flex-row"><Award size={20} /> Sınav Ekle</h3>
+            
+            <form onSubmit={handleSaveExam} className="exam-form flex-col" style={{ gap: '1.5rem', marginTop: '1rem' }}>
+              <div className="form-row grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label>Sınıf Seçin</label>
+                  <select 
+                    value={examClassId} 
+                    onChange={(e) => {
+                      setExamClassId(e.target.value);
+                      setExamStudentId('');
+                    }}
+                    required
+                  >
+                    <option value="">-- Sınıf Seçin --</option>
+                    {classrooms.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label>Öğrenci Seçin</label>
+                  <select 
+                    value={examStudentId} 
+                    onChange={(e) => setExamStudentId(e.target.value)}
+                    required
+                    disabled={!examClassId}
+                  >
+                    <option value="">-- Öğrenci Seçin --</option>
+                    {classrooms.find(c => c.id === Number(examClassId))?.students.map(s => (
+                      <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.username})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label>Sınav Adı</label>
+                  <input 
+                    type="text" 
+                    placeholder="Örn: Türkiye Geneli Deneme 1" 
+                    value={examTitle} 
+                    onChange={(e) => setExamTitle(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Tarih</label>
+                  <input 
+                    type="date" 
+                    value={examDate} 
+                    onChange={(e) => setExamDate(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="subjects-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                <div className="flex-row" style={{ justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <h4>Ders Netleri</h4>
+                  <button type="button" className="secondary btn-sm flex-row" onClick={handleAddExamSubject}>
+                    <PlusCircle size={14} /> Yeni Ders Ekle
+                  </button>
+                </div>
+
+                {examSubjects.map((sub, idx) => {
+                  const c = parseInt(String(sub.correct), 10);
+                  const inc = parseInt(String(sub.incorrect), 10);
+                  const net = (isNaN(c) ? 0 : c) - (isNaN(inc) ? 0 : inc) / 4;
+                  return (
+                    <div key={idx} className="subject-row flex-row" style={{ gap: '1rem', alignItems: 'flex-end', marginBottom: '1rem', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
+                      <div className="input-group" style={{ flex: 2, marginBottom: 0 }}>
+                        <label>Ders Adı</label>
+                        <input 
+                          type="text" 
+                          placeholder="Örn: Matematik" 
+                          value={sub.subject_name}
+                          onChange={(e) => handleUpdateExamSubject(idx, 'subject_name', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+                        <label>Doğru</label>
+                        <input 
+                          type="number" 
+                          min="0"
+                          value={sub.correct}
+                          onChange={(e) => handleUpdateExamSubject(idx, 'correct', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+                        <label>Yanlış</label>
+                        <input 
+                          type="number" 
+                          min="0"
+                          value={sub.incorrect}
+                          onChange={(e) => handleUpdateExamSubject(idx, 'incorrect', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="net-display" style={{ padding: '0.75rem', background: 'var(--bg-primary)', borderRadius: '6px', textAlign: 'center', minWidth: '80px', fontWeight: 'bold' }}>
+                        {net.toFixed(2)} Net
+                      </div>
+                      {examSubjects.length > 1 && (
+                        <button type="button" className="danger-text" onClick={() => handleRemoveExamSubject(idx)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.75rem' }}>
+                          <X size={20} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <div className="total-net-display flex-row" style={{ justifyContent: 'flex-end', marginTop: '1.5rem', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                  Toplam Net: <span className="primary-text" style={{ marginLeft: '0.5rem' }}>{calculateExamTotalNet().toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <button type="submit" className="primary" disabled={savingExam}>
+                  {savingExam ? 'Kaydediliyor...' : 'Sınavı Kaydet'}
                 </button>
               </div>
             </form>

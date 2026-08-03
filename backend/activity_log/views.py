@@ -40,9 +40,9 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
         if action:
             queryset = queryset.filter(action=action)
         if date_from:
-            queryset = queryset.filter(created_at__date__gte=date_from)
+            queryset = queryset.filter(created_at__gte=date_from)
         if date_to:
-            queryset = queryset.filter(created_at__date__lte=date_to)
+            queryset = queryset.filter(created_at__lte=date_to)
         if search:
             queryset = queryset.filter(Q(username__icontains=search) | Q(action_display__icontains=search))
             
