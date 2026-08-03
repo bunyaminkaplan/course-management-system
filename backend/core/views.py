@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView as BaseTokenObtainPairView
+from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView
 from django.db import models
 
 from datetime import timedelta
@@ -14,6 +16,9 @@ from .serializers import (
     AssignmentSerializer, StudentAssignmentSerializer, ScheduleSerializer, 
     SessionSerializer, AttendanceSerializer, FeedItemSerializer
 )
+from activity_log.mixins import ActivityLogMixin
+from activity_log.utils import log_activity
+
 
 def sync_daily_sessions():
     now = timezone.localtime()
@@ -62,29 +67,234 @@ def sync_daily_sessions():
                 session.status = Session.Status.MISSED
                 session.save(update_fields=['status'])
 
-class UserViewSet(viewsets.ModelViewSet):
+
+# ─── Auth Logging Views ──────────────────────────────────────────────
+
+class LoggingTokenObtainPairView(BaseTokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username', '')
+        try:
+            response = super().post(request, *args, **kwargs)
+            user = User.objects.filter(username=username).first()
+            log_activity(
+                request, 'AUTH', 'LOGIN', 'Giriş yapıldı', 'SUCCESS',
+                details={'username': username},
+                target_model='User',
+                target_id=user.id if user else None
+            )
+            return response
+        except Exception as e:
+            log_activity(
+                request, 'AUTH', 'LOGIN_FAILED', 'Başarısız giriş denemesi', 'FAILURE',
+                details={'attempted_username': username, 'reason': str(e)},
+            )
+            raise
+
+
+class LoggingTokenRefreshView(BaseTokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        try:
+            response = super().post(request, *args, **kwargs)
+            log_activity(
+                request, 'AUTH', 'TOKEN_REFRESH', 'Token yenilendi', 'SUCCESS',
+            )
+            return response
+        except Exception as e:
+            log_activity(
+                request, 'AUTH', 'TOKEN_REFRESH', 'Token yenileme başarısız', 'FAILURE',
+                details={'reason': str(e)},
+            )
+            raise
+
+
+# ─── ViewSets with Logging ────────────────────────────────────────────
+
+class UserViewSet(ActivityLogMixin, viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    log_category = 'USER_MGMT'
+    log_action_create = 'CREATE_USER'
+    log_action_update = 'UPDATE_USER'
+    log_action_destroy = 'DELETE_USER'
+    log_display_create = 'Kullanıcı oluşturuldu'
+    log_display_update = 'Kullanıcı güncellendi'
+    log_display_destroy = 'Kullanıcı silindi'
 
-class ClassRoomViewSet(viewsets.ModelViewSet):
+    def get_log_details(self, instance, action):
+        return {
+            'target_user': instance.username,
+            'role': instance.role,
+            'email': instance.email,
+            'full_name': f'{instance.first_name} {instance.last_name}'.strip(),
+        }
+
+
+class ClassRoomViewSet(ActivityLogMixin, viewsets.ModelViewSet):
     queryset = ClassRoom.objects.all()
     serializer_class = ClassRoomSerializer
+    log_category = 'CLASSROOM'
+    log_action_create = 'CREATE_CLASSROOM'
+    log_action_update = 'UPDATE_CLASSROOM'
+    log_action_destroy = 'DELETE_CLASSROOM'
+    log_display_create = 'Sınıf oluşturuldu'
+    log_display_update = 'Sınıf güncellendi'
+    log_display_destroy = 'Sınıf silindi'
 
-class AnnouncementViewSet(viewsets.ModelViewSet):
+    def get_log_details(self, instance, action):
+        return {
+            'classroom_name': instance.name,
+            'instructor_count': instance.instructors.count(),
+            'student_count': instance.students.count(),
+        }
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        old_instructor_ids = set(instance.instructors.values_list('id', flat=True))
+        old_student_ids = set(instance.students.values_list('id', flat=True))
+
+        super().perform_update(serializer)
+
+        updated = serializer.instance
+        new_instructor_ids = set(updated.instructors.values_list('id', flat=True))
+        new_student_ids = set(updated.students.values_list('id', flat=True))
+
+        # Log instructor changes
+        added_instructors = new_instructor_ids - old_instructor_ids
+        removed_instructors = old_instructor_ids - new_instructor_ids
+        for uid in added_instructors:
+            u = User.objects.filter(id=uid).first()
+            log_activity(
+                self.request, 'CLASSROOM', 'ASSIGN_INSTRUCTOR', 'Eğitmen atandı', 'SUCCESS',
+                details={'classroom': updated.name, 'instructor': u.username if u else str(uid)},
+                target_model='ClassRoom', target_id=updated.id
+            )
+        for uid in removed_instructors:
+            u = User.objects.filter(id=uid).first()
+            log_activity(
+                self.request, 'CLASSROOM', 'REMOVE_INSTRUCTOR', 'Eğitmen kaldırıldı', 'SUCCESS',
+                details={'classroom': updated.name, 'instructor': u.username if u else str(uid)},
+                target_model='ClassRoom', target_id=updated.id
+            )
+
+        # Log student changes
+        added_students = new_student_ids - old_student_ids
+        removed_students = old_student_ids - new_student_ids
+        for uid in added_students:
+            u = User.objects.filter(id=uid).first()
+            log_activity(
+                self.request, 'CLASSROOM', 'ENROLL_STUDENT', 'Öğrenci kaydedildi', 'SUCCESS',
+                details={'classroom': updated.name, 'student': u.username if u else str(uid)},
+                target_model='ClassRoom', target_id=updated.id
+            )
+        for uid in removed_students:
+            u = User.objects.filter(id=uid).first()
+            log_activity(
+                self.request, 'CLASSROOM', 'UNENROLL_STUDENT', 'Öğrenci kaydı silindi', 'SUCCESS',
+                details={'classroom': updated.name, 'student': u.username if u else str(uid)},
+                target_model='ClassRoom', target_id=updated.id
+            )
+
+
+class AnnouncementViewSet(ActivityLogMixin, viewsets.ModelViewSet):
     queryset = Announcement.objects.all()
     serializer_class = AnnouncementSerializer
+    log_category = 'CONTENT'
+    log_action_create = 'CREATE_ANNOUNCEMENT'
+    log_action_update = 'UPDATE_ANNOUNCEMENT'
+    log_action_destroy = 'DELETE_ANNOUNCEMENT'
+    log_display_create = 'Duyuru oluşturuldu'
+    log_display_update = 'Duyuru güncellendi'
+    log_display_destroy = 'Duyuru silindi'
 
-class AssignmentViewSet(viewsets.ModelViewSet):
+    def get_log_details(self, instance, action):
+        return {
+            'title': instance.title,
+            'classroom': instance.classroom.name,
+        }
+
+
+class AssignmentViewSet(ActivityLogMixin, viewsets.ModelViewSet):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
+    log_category = 'CONTENT'
+    log_action_create = 'CREATE_ASSIGNMENT'
+    log_action_update = 'UPDATE_ASSIGNMENT'
+    log_action_destroy = 'DELETE_ASSIGNMENT'
+    log_display_create = 'Ödev oluşturuldu'
+    log_display_update = 'Ödev güncellendi'
+    log_display_destroy = 'Ödev silindi'
 
-class StudentAssignmentViewSet(viewsets.ModelViewSet):
+    def get_log_details(self, instance, action):
+        return {
+            'title': instance.title,
+            'classroom': instance.classroom.name,
+            'deadline': str(instance.deadline),
+        }
+
+
+class StudentAssignmentViewSet(ActivityLogMixin, viewsets.ModelViewSet):
     queryset = StudentAssignment.objects.all()
     serializer_class = StudentAssignmentSerializer
+    log_category = 'SUBMISSION'
+    log_action_create = ''
+    log_action_update = ''
+    log_action_destroy = ''
+    log_display_create = ''
+    log_display_update = ''
+    log_display_destroy = ''
 
-class ScheduleViewSet(viewsets.ModelViewSet):
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        old_status = instance.status
+        old_grade = instance.grade
+
+        super().perform_update(serializer)
+
+        updated = serializer.instance
+
+        # Detect submission
+        if old_status != 'SUBMITTED' and updated.status == 'SUBMITTED':
+            log_activity(
+                self.request, 'SUBMISSION', 'SUBMIT_ASSIGNMENT', 'Ödev teslim edildi', 'SUCCESS',
+                details={
+                    'student': updated.student.username,
+                    'assignment': updated.assignment.title,
+                    'classroom': updated.assignment.classroom.name,
+                },
+                target_model='StudentAssignment', target_id=updated.id
+            )
+
+        # Detect grading
+        if updated.grade is not None and updated.grade != old_grade:
+            log_activity(
+                self.request, 'SUBMISSION', 'GRADE_ASSIGNMENT', 'Ödev notlandırıldı', 'SUCCESS',
+                details={
+                    'student': updated.student.username,
+                    'assignment': updated.assignment.title,
+                    'grade': str(updated.grade),
+                    'classroom': updated.assignment.classroom.name,
+                },
+                target_model='StudentAssignment', target_id=updated.id
+            )
+
+
+class ScheduleViewSet(ActivityLogMixin, viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
+    log_category = 'SCHEDULE'
+    log_action_create = 'CREATE_SCHEDULE'
+    log_action_update = 'UPDATE_SCHEDULE'
+    log_action_destroy = 'DELETE_SCHEDULE'
+    log_display_create = 'Ders programı oluşturuldu'
+    log_display_update = 'Ders programı güncellendi'
+    log_display_destroy = 'Ders programı silindi'
+
+    def get_log_details(self, instance, action):
+        return {
+            'classroom': instance.classroom.name,
+            'day': instance.get_day_of_week_display(),
+            'time': f'{instance.start_time} - {instance.end_time}',
+        }
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
@@ -94,17 +304,68 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         super().perform_update(serializer)
         sync_daily_sessions()
 
-class SessionViewSet(viewsets.ModelViewSet):
+
+class SessionViewSet(ActivityLogMixin, viewsets.ModelViewSet):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
+    log_category = 'ATTENDANCE'
+    log_action_create = ''
+    log_action_update = ''
+    log_action_destroy = ''
+    log_display_create = ''
+    log_display_update = ''
+    log_display_destroy = ''
 
     def get_queryset(self):
         sync_daily_sessions()
         return super().get_queryset()
 
-class AttendanceViewSet(viewsets.ModelViewSet):
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        old_status = instance.status
+
+        super().perform_update(serializer)
+
+        updated = serializer.instance
+
+        if updated.status == 'ACTIVE' and old_status != 'ACTIVE':
+            log_activity(
+                self.request, 'ATTENDANCE', 'START_SESSION', 'Oturum başlatıldı', 'SUCCESS',
+                details={
+                    'classroom': updated.classroom.name,
+                    'date': str(updated.date),
+                },
+                target_model='Session', target_id=updated.id
+            )
+        elif updated.status == 'COMPLETED' and old_status != 'COMPLETED':
+            log_activity(
+                self.request, 'ATTENDANCE', 'COMPLETE_SESSION', 'Oturum tamamlandı', 'SUCCESS',
+                details={
+                    'classroom': updated.classroom.name,
+                    'date': str(updated.date),
+                },
+                target_model='Session', target_id=updated.id
+            )
+
+
+class AttendanceViewSet(ActivityLogMixin, viewsets.ModelViewSet):
     queryset = Attendance.objects.all()
     serializer_class = AttendanceSerializer
+    log_category = 'ATTENDANCE'
+    log_action_create = 'RECORD_ATTENDANCE'
+    log_action_update = 'RECORD_ATTENDANCE'
+    log_action_destroy = ''
+    log_display_create = 'Yoklama kaydedildi'
+    log_display_update = 'Yoklama güncellendi'
+    log_display_destroy = ''
+
+    def get_log_details(self, instance, action):
+        return {
+            'student': instance.student.username,
+            'session_id': instance.session_id,
+            'is_present': instance.is_present,
+        }
+
 
 class FeedAPIView(APIView):
     """

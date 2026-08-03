@@ -16,7 +16,8 @@ import {
   X,
   MessageSquare,
   Sun,
-  Moon
+  Moon,
+  ScrollText
 } from 'lucide-react';
 import './Layout.css';
 
@@ -70,6 +71,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           { label: 'Kullanıcı Yönetimi', path: '/', icon: <Users className={defaultIconClass} /> },
           { label: 'Sınıf Yönetimi', path: '/admin-classrooms', icon: <BookOpen className={defaultIconClass} /> },
           { label: 'Ders Programı Tanımlama', path: '/admin-schedule', icon: <Clock className={defaultIconClass} /> },
+          { label: 'Sistem Logları', path: '/admin-logs', icon: <ScrollText className={defaultIconClass} /> },
         ];
       default:
         return [];

@@ -9,6 +9,7 @@ import InstructorDashboard from './pages/InstructorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ForumPage from './pages/ForumPage';
 import ThreadPage from './pages/ThreadPage';
+import LogsPage from './pages/LogsPage';
 
 // Route guards to protect pages
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
@@ -139,6 +140,14 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin-logs" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <LogsPage />
                 </ProtectedRoute>
               } 
             />
