@@ -101,7 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post('/api/logout/');
+    } catch (e) {
+      // Ignore network errors on logout
+      console.warn("Backend logout notification failed", e);
+    }
     clearTokens();
     setUser(null);
   };

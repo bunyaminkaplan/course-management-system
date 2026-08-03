@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, ClassRoomViewSet, AnnouncementViewSet, 
     AssignmentViewSet, StudentAssignmentViewSet, ScheduleViewSet, 
-    SessionViewSet, AttendanceViewSet, FeedAPIView, PracticeExamViewSet
+    SessionViewSet, AttendanceViewSet, FeedAPIView, PracticeExamViewSet,
+    LogoutView
 )
 
 router = DefaultRouter()
@@ -20,4 +21,5 @@ router.register(r'practice-exams', PracticeExamViewSet, basename='practiceexam')
 urlpatterns = [
     path('', include(router.urls)),
     path('feed/', FeedAPIView.as_view(), name='aggregated-feed'),
+    path('logout/', LogoutView.as_view(), name='logout'),
 ]

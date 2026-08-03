@@ -454,3 +454,19 @@ class PracticeExamViewSet(ActivityLogMixin, viewsets.ModelViewSet):
             return PracticeExam.objects.filter(classroom__instructors=user).order_by('-date', '-created_at')
         else: # STUDENT
             return PracticeExam.objects.filter(student=user).order_by('-date', '-created_at')
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        log_activity(
+            request,
+            category='AUTH',
+            action='LOGOUT',
+            action_display='Çıkış yapıldı',
+            status='SUCCESS',
+            details={'username': request.user.username},
+            target_model='User',
+            target_id=request.user.id
+        )
+        return Response({"detail": "Successfully logged out."}, status=200)
