@@ -6,7 +6,8 @@ import { Pagination } from '../components/Pagination';
 
 export const ForumPage: React.FC = () => {
   const [classrooms, setClassrooms] = useState<any[]>([]);
-  const [selectedClassroomId, setSelectedClassroomId] = useState<number | null>(null);
+  const [selectedClassroomId, setSelectedClassroomId] = useState<number | 'all'>('all');
+  const [targetClassroomId, setTargetClassroomId] = useState<number | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -24,11 +25,10 @@ export const ForumPage: React.FC = () => {
   useEffect(() => {
     const fetchClassrooms = async () => {
       try {
-        // Assume /api/classrooms/ returns classes the user is enrolled in/instructs
         const data = await api.get('/api/classrooms/');
         setClassrooms(data);
         if (data && data.length > 0) {
-          setSelectedClassroomId(data[0].id);
+          setTargetClassroomId(data[0].id);
         }
       } catch (err) {
         console.error('Error fetching classrooms', err);
@@ -40,13 +40,12 @@ export const ForumPage: React.FC = () => {
   // Fetch threads when classroom changes
   useEffect(() => {
     const fetchThreads = async () => {
-      if (!selectedClassroomId) return;
       setLoading(true);
       setThreadPage(1);
       try {
         const data = await discussionService.getThreadsByClassroom(selectedClassroomId);
-        // Sort threads by score descending
-        data.sort((a: Thread, b: Thread) => b.score - a.score);
+        // Sort newest first
+        data.sort((a: Thread, b: Thread) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setThreads(data);
       } catch (err) {
         console.error('Error fetching threads', err);
@@ -58,10 +57,11 @@ export const ForumPage: React.FC = () => {
   }, [selectedClassroomId]);
 
   const handleCreateThread = async () => {
-    if (!selectedClassroomId || !newTitle.trim() || !newContent.trim()) return;
+    const classIdToUse = typeof selectedClassroomId === 'number' ? selectedClassroomId : targetClassroomId || (classrooms[0]?.id);
+    if (!classIdToUse || !newTitle.trim() || !newContent.trim()) return;
     try {
-      const thread = await discussionService.createThread(selectedClassroomId, newTitle, newContent);
-      setThreads([thread, ...threads].sort((a, b) => b.score - a.score));
+      const thread = await discussionService.createThread(classIdToUse, newTitle, newContent);
+      setThreads([thread, ...threads]);
       setNewTitle('');
       setNewContent('');
       setIsCreating(false);
@@ -77,10 +77,14 @@ export const ForumPage: React.FC = () => {
         <h2>Soru & Cevap (Forum)</h2>
         
         <select 
-          value={selectedClassroomId || ''} 
-          onChange={(e) => setSelectedClassroomId(Number(e.target.value))}
+          value={selectedClassroomId} 
+          onChange={(e) => {
+            const val = e.target.value;
+            setSelectedClassroomId(val === 'all' ? 'all' : Number(val));
+          }}
           style={{ minWidth: '200px' }}
         >
+          <option value="all">Tüm Sınıflar</option>
           {classrooms.map(c => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
@@ -93,6 +97,22 @@ export const ForumPage: React.FC = () => {
         ) : (
           <div className="card glass animate-fade">
             <h3 style={{ marginBottom: 'var(--space-md)', color: 'hsl(var(--primary))' }}>Yeni Başlık</h3>
+            
+            {classrooms.length > 1 && (
+              <div style={{ marginBottom: 'var(--space-md)' }}>
+                <label>Sınıf Seçin</label>
+                <select 
+                  value={typeof selectedClassroomId === 'number' ? selectedClassroomId : (targetClassroomId || classrooms[0]?.id)}
+                  onChange={(e) => setTargetClassroomId(Number(e.target.value))}
+                  style={{ width: '100%' }}
+                >
+                  {classrooms.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <label>Konu Başlığı</label>
             <input 
               style={{ width: '100%', marginBottom: 'var(--space-md)' }} 

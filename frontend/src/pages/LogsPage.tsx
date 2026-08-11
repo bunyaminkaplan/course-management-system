@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, AlertTriangle, Clock, Search, X, ChevronDown, ChevronUp, ScrollText, Calendar as CalendarIcon, UserX } from 'lucide-react';
+import { Activity, AlertTriangle, Clock, Search, X, ChevronDown, ChevronUp, ScrollText, UserX } from 'lucide-react';
 import api from '../services/api';
 import { Pagination } from '../components/Pagination';
 import './LogsPage.css';

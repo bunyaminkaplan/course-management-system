@@ -20,6 +20,7 @@ interface User {
   first_name: string;
   last_name: string;
   role: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+  is_counselor?: boolean;
 }
 
 interface Classroom {
@@ -57,6 +58,7 @@ export const AdminDashboard: React.FC = () => {
   const [newLastName, setNewLastName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<'ADMIN' | 'INSTRUCTOR' | 'STUDENT'>('STUDENT');
+  const [newIsCounselor, setNewIsCounselor] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
 
   // Classroom Creator State
@@ -136,7 +138,8 @@ export const AdminDashboard: React.FC = () => {
         first_name: newFirstName,
         last_name: newLastName,
         password: newPassword,
-        role: newRole
+        role: newRole,
+        is_counselor: newRole === 'INSTRUCTOR' ? newIsCounselor : false
       });
       
       setUsers([...users, newUser]);
@@ -146,11 +149,23 @@ export const AdminDashboard: React.FC = () => {
       setNewFirstName('');
       setNewLastName('');
       setNewPassword('');
+      setNewIsCounselor(false);
       alert('Kullanıcı başarıyla oluşturuldu!');
     } catch (err: any) {
       alert(err.message || 'Kullanıcı oluşturulurken hata oluştu.');
     } finally {
       setCreatingUser(false);
+    }
+  };
+
+  const handleToggleCounselor = async (u: User) => {
+    try {
+      const updated = await api.patch(`/api/users/${u.id}/`, {
+        is_counselor: !u.is_counselor
+      });
+      setUsers(users.map(item => item.id === u.id ? { ...item, is_counselor: updated.is_counselor } : item));
+    } catch (err: any) {
+      alert(err.message || 'Rehber öğretmen durumu güncellenemedi.');
     }
   };
 
@@ -352,18 +367,38 @@ export const AdminDashboard: React.FC = () => {
                       <td><strong>{u.username}</strong></td>
                       <td>{u.email}</td>
                       <td>
-                        <span className={`role-badge ${u.role.toLowerCase()}`}>
-                          {getRoleLabel(u.role)}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                          <span className={`role-badge ${u.role.toLowerCase()}`}>
+                            {getRoleLabel(u.role)}
+                          </span>
+                          {u.role === 'INSTRUCTOR' && u.is_counselor && (
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(99, 102, 241, 0.15)', color: '#4f46e5', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                              🛡️ Rehber Öğretmen
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td>
-                        <button 
-                          className="danger btn-sm" 
-                          onClick={() => handleDeleteUser(u.id)}
-                          disabled={u.id === currentUser?.id}
-                        >
-                          <Trash2 size={14} /> Sil
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'stretch' }}>
+                          {u.role === 'INSTRUCTOR' && (
+                            <button
+                              className={`btn-sm ${u.is_counselor ? 'secondary' : 'secondary'}`}
+                              onClick={() => handleToggleCounselor(u)}
+                              title={u.is_counselor ? 'Rehber öğretmen yetkisini kaldır' : 'Rehber öğretmen yetkisi ver'}
+                              style={{ fontSize: '0.78rem', textAlign: 'center', whiteSpace: 'nowrap' }}
+                            >
+                              {u.is_counselor ? '🛡️ Rehberliği Kaldır' : '🛡️ Rehber Yap'}
+                            </button>
+                          )}
+                          <button
+                            className="danger btn-sm"
+                            onClick={() => handleDeleteUser(u.id)}
+                            disabled={u.id === currentUser?.id}
+                            style={{ fontSize: '0.78rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                          >
+                            <Trash2 size={12} /> Sil
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -398,6 +433,21 @@ export const AdminDashboard: React.FC = () => {
                   <option value="ADMIN">Yönetici (Admin)</option>
                 </select>
               </div>
+
+              {newRole === 'INSTRUCTOR' && (
+                <div className="input-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
+                  <input
+                    id="new-is-counselor"
+                    type="checkbox"
+                    checked={newIsCounselor}
+                    onChange={(e) => setNewIsCounselor(e.target.checked)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="new-is-counselor" style={{ margin: 0, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+                    🛡️ Rehber Öğretmen (Counselor) Yap
+                  </label>
+                </div>
+              )}
 
               <div className="input-group">
                 <label htmlFor="new-username">Kullanıcı Adı</label>

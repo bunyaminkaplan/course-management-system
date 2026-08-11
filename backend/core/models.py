@@ -10,6 +10,7 @@ class User(AbstractUser):
         STUDENT = 'STUDENT', 'Student'
 
     role = models.CharField(max_length=15, choices=Role.choices, default=Role.STUDENT)
+    is_counselor = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
