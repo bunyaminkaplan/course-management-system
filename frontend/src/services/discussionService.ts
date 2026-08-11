@@ -33,7 +33,7 @@ export interface Comment {
 }
 
 export const discussionService = {
-  getThreadsByClassroom: (classroomId: number) => {
+  getThreadsByClassroom: (classroomId: number | string) => {
     return api.get(`/api/discussion/threads/by_classroom/?classroom_id=${classroomId}`);
   },
 

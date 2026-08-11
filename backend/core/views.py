@@ -111,7 +111,7 @@ class LoggingTokenRefreshView(BaseTokenRefreshView):
 # ─── ViewSets with Logging ────────────────────────────────────────────
 
 class UserViewSet(ActivityLogMixin, viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('-id')
     serializer_class = UserSerializer
     log_category = 'USER_MGMT'
     log_action_create = 'CREATE_USER'
@@ -131,7 +131,7 @@ class UserViewSet(ActivityLogMixin, viewsets.ModelViewSet):
 
 
 class ClassRoomViewSet(ActivityLogMixin, viewsets.ModelViewSet):
-    queryset = ClassRoom.objects.all()
+    queryset = ClassRoom.objects.all().order_by('id')
     serializer_class = ClassRoomSerializer
     log_category = 'CLASSROOM'
     log_action_create = 'CREATE_CLASSROOM'
@@ -197,7 +197,7 @@ class ClassRoomViewSet(ActivityLogMixin, viewsets.ModelViewSet):
 
 
 class AnnouncementViewSet(ActivityLogMixin, viewsets.ModelViewSet):
-    queryset = Announcement.objects.all()
+    queryset = Announcement.objects.all().order_by('-created_at')
     serializer_class = AnnouncementSerializer
     log_category = 'CONTENT'
     log_action_create = 'CREATE_ANNOUNCEMENT'
@@ -215,7 +215,7 @@ class AnnouncementViewSet(ActivityLogMixin, viewsets.ModelViewSet):
 
 
 class AssignmentViewSet(ActivityLogMixin, viewsets.ModelViewSet):
-    queryset = Assignment.objects.all()
+    queryset = Assignment.objects.all().order_by('-created_at')
     serializer_class = AssignmentSerializer
     log_category = 'CONTENT'
     log_action_create = 'CREATE_ASSIGNMENT'
@@ -234,7 +234,7 @@ class AssignmentViewSet(ActivityLogMixin, viewsets.ModelViewSet):
 
 
 class StudentAssignmentViewSet(ActivityLogMixin, viewsets.ModelViewSet):
-    queryset = StudentAssignment.objects.all()
+    queryset = StudentAssignment.objects.all().order_by('-id')
     serializer_class = StudentAssignmentSerializer
     log_category = 'SUBMISSION'
     log_action_create = ''
@@ -307,7 +307,7 @@ class ScheduleViewSet(ActivityLogMixin, viewsets.ModelViewSet):
 
 
 class SessionViewSet(ActivityLogMixin, viewsets.ModelViewSet):
-    queryset = Session.objects.all()
+    queryset = Session.objects.all().order_by('-date', '-id')
     serializer_class = SessionSerializer
     log_category = 'ATTENDANCE'
     log_action_create = ''
@@ -448,10 +448,10 @@ class PracticeExamViewSet(ActivityLogMixin, viewsets.ModelViewSet):
         user = self.request.user
         if user.is_anonymous:
             return PracticeExam.objects.none()
-        if user.role == User.Role.ADMIN:
+        if user.role == User.Role.ADMIN or (user.role == User.Role.INSTRUCTOR and getattr(user, 'is_counselor', False)):
             return PracticeExam.objects.all().order_by('-date', '-created_at')
         elif user.role == User.Role.INSTRUCTOR:
-            return PracticeExam.objects.filter(classroom__instructors=user).order_by('-date', '-created_at')
+            return PracticeExam.objects.filter(classroom__instructors=user).distinct().order_by('-date', '-created_at')
         else: # STUDENT
             return PracticeExam.objects.filter(student=user).order_by('-date', '-created_at')
 

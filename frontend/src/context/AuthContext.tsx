@@ -8,6 +8,7 @@ export interface UserProfile {
   first_name: string;
   last_name: string;
   role: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+  is_counselor?: boolean;
 }
 
 interface AuthContextType {

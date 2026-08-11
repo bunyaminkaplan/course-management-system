@@ -47,7 +47,10 @@ class ThreadViewSet(ActivityLogMixin, viewsets.ModelViewSet):
         classroom_id = request.query_params.get('classroom_id')
         if not classroom_id:
             return Response({"detail": "classroom_id query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
-        threads = self.queryset.filter(classroom_id=classroom_id)
+        if str(classroom_id).lower() == 'all':
+            threads = self.get_queryset().order_by('-created_at')
+        else:
+            threads = self.get_queryset().filter(classroom_id=classroom_id).order_by('-created_at')
         serializer = self.get_serializer(threads, many=True)
         return Response(serializer.data)
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Pagination } from '../components/Pagination';
@@ -155,6 +156,18 @@ export const InstructorDashboard: React.FC = () => {
   const [examSubjects, setExamSubjects] = useState<Omit<ExamSubjectScore, 'id' | 'net_score'>[]>([{ subject_name: '', correct: 0, incorrect: 0 }]);
   const [savingExam, setSavingExam] = useState(false);
 
+  // Practice Exam List & Counselor State
+  const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [practiceExams, setPracticeExams] = useState<PracticeExam[]>([]);
+  const [examSubTab, setExamSubTab] = useState<'LIST' | 'CREATE'>('LIST');
+  const [selectedExamClassroomFilter, setSelectedExamClassroomFilter] = useState<string>('ALL');
+  const [selectedExamStudentFilter, setSelectedExamStudentFilter] = useState<string>('ALL');
+  const [examSearchQuery, setExamSearchQuery] = useState<string>('');
+  const [selectedExamForDetail, setSelectedExamForDetail] = useState<PracticeExam | null>(null);
+  const [practiceExamsPage, setPracticeExamsPage] = useState(1);
+  const EXAMS_PER_PAGE = 8;
+
   const submittedList = submissions.filter(s => s.status === 'SUBMITTED');
   const totalSubmissionPages = Math.ceil(submittedList.length / SUBMISSIONS_PER_PAGE);
   const paginatedSubmissions = submittedList.slice((submissionPage - 1) * SUBMISSIONS_PER_PAGE, submissionPage * SUBMISSIONS_PER_PAGE);
@@ -166,6 +179,7 @@ export const InstructorDashboard: React.FC = () => {
     try {
       // 1. Fetch Classrooms
       const classData: Classroom[] = await api.get('/api/classrooms/');
+      setAllClassrooms(classData);
       // Filter classrooms where this user is one of the instructors
       const instructorClasses = classData.filter(c => c.instructors.some(inst => inst.id === user.id));
       setClassrooms(instructorClasses);
@@ -176,6 +190,7 @@ export const InstructorDashboard: React.FC = () => {
 
       // 2. Fetch Users to map student details
       const usersData: User[] = await api.get('/api/users/');
+      setAllUsers(usersData);
 
       // 3. Fetch Announcements
       const annData: Announcement[] = await api.get('/api/announcements/');
@@ -217,6 +232,10 @@ export const InstructorDashboard: React.FC = () => {
         };
       });
       setSessions(relevantSessions);
+
+      // 7. Fetch Practice Exams
+      const pExamsData: PracticeExam[] = await api.get('/api/practice-exams/');
+      setPracticeExams(pExamsData);
 
     } catch (err: any) {
       setError(err.message || 'Veriler yüklenirken bir hata oluştu.');
@@ -450,6 +469,11 @@ export const InstructorDashboard: React.FC = () => {
       await api.post('/api/practice-exams/', payload);
       alert('Sınav sonucu başarıyla eklendi.');
       
+      // Refresh list and navigate to LIST tab
+      const updatedExams: PracticeExam[] = await api.get('/api/practice-exams/');
+      setPracticeExams(updatedExams);
+      setExamSubTab('LIST');
+
       // Reset form
       setExamTitle('');
       setExamDate('');
@@ -458,6 +482,20 @@ export const InstructorDashboard: React.FC = () => {
       alert(err.message || 'Sınav sonucu eklenirken bir hata oluştu.');
     } finally {
       setSavingExam(false);
+    }
+  };
+
+  const handleDeleteExam = async (examId: number) => {
+    if (!window.confirm('Bu deneme sınavı sonucunu silmek istediğinize emin misiniz?')) return;
+    try {
+      await api.delete(`/api/practice-exams/${examId}/`);
+      setPracticeExams(practiceExams.filter(e => e.id !== examId));
+      if (selectedExamForDetail?.id === examId) {
+        setSelectedExamForDetail(null);
+      }
+      alert('Sınav sonucu silindi.');
+    } catch (err: any) {
+      alert(err.message || 'Sınav sonucu silinemedi.');
     }
   };
 
@@ -831,144 +869,454 @@ export const InstructorDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 4: Sınav Sonuçları Ekleme (Practice Exams) */}
+      {/* SECTION 4: Sınav Sonuçları (Practice Exams) */}
       {activePath === '/instructor-practice-exams' && (
         <div className="practice-exam-layout flex-col animate-fade">
           <div className="section-header">
             <h2>Deneme Sınavı Sonuçları</h2>
-            <p>Öğrencileriniz için deneme sınavı sonuçları girin</p>
+            <p>Öğrencilerinizin deneme sınavı sonuçlarını inceleyin veya yeni sınav sonucu ekleyin</p>
           </div>
 
-          <div className="exam-form-card card">
-            <h3 className="panel-title flex-row"><Award size={20} /> Sınav Ekle</h3>
-            
-            <form onSubmit={handleSaveExam} className="exam-form flex-col" style={{ gap: '1.5rem', marginTop: '1rem' }}>
-              <div className="form-row grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="input-group">
-                  <label>Sınıf Seçin</label>
-                  <select 
-                    value={examClassId} 
-                    onChange={(e) => {
-                      setExamClassId(e.target.value);
-                      setExamStudentId('');
-                    }}
-                    required
-                  >
-                    <option value="">-- Sınıf Seçin --</option>
-                    {classrooms.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="input-group">
-                  <label>Öğrenci Seçin</label>
-                  <select 
-                    value={examStudentId} 
-                    onChange={(e) => setExamStudentId(e.target.value)}
-                    required
-                    disabled={!examClassId}
-                  >
-                    <option value="">-- Öğrenci Seçin --</option>
-                    {classrooms.find(c => c.id === Number(examClassId))?.students.map(s => (
-                      <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.username})</option>
-                    ))}
-                  </select>
-                </div>
+          {/* Counselor Banner */}
+          {user?.is_counselor && (
+            <div className="counselor-banner card" style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)', color: '#ffffff', padding: '1rem 1.25rem', borderRadius: '10px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)' }}>
+              <span style={{ fontSize: '1.75rem' }}>🛡️</span>
+              <div>
+                <strong style={{ fontSize: '1.05rem', display: 'block', marginBottom: '2px' }}>Rehber Öğretmen (Counselor) Yetkisi Aktif</strong>
+                <span style={{ fontSize: '0.875rem', opacity: 0.95 }}>Kurum genelindeki tüm öğrencilerin ve sınıfların deneme sınavı sonuçlarına erişebilirsiniz.</span>
               </div>
+            </div>
+          )}
 
-              <div className="form-row grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="input-group">
-                  <label>Sınav Adı</label>
-                  <input 
-                    type="text" 
-                    placeholder="Örn: Türkiye Geneli Deneme 1" 
-                    value={examTitle} 
-                    onChange={(e) => setExamTitle(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Tarih</label>
-                  <input 
-                    type="date" 
-                    value={examDate} 
-                    onChange={(e) => setExamDate(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
+          {/* Sub Tab Navigation */}
+          <div className="exam-subtabs flex-row" style={{ gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+            <button
+              className={`btn ${examSubTab === 'LIST' ? 'primary' : 'secondary'}`}
+              onClick={() => setExamSubTab('LIST')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <FileText size={18} /> Sınav Sonuçları Listesi ({practiceExams.length})
+            </button>
+            <button
+              className={`btn ${examSubTab === 'CREATE' ? 'primary' : 'secondary'}`}
+              onClick={() => setExamSubTab('CREATE')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <PlusCircle size={18} /> Yeni Sınav Sonucu Ekle
+            </button>
+          </div>
 
-              <div className="subjects-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                <div className="flex-row" style={{ justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <h4>Ders Netleri</h4>
-                  <button type="button" className="secondary btn-sm flex-row" onClick={handleAddExamSubject}>
-                    <PlusCircle size={14} /> Yeni Ders Ekle
-                  </button>
+          {/* SUB TAB 1: Sınav Sonuçları Listesi */}
+          {examSubTab === 'LIST' && (() => {
+            const availableClassroomsForExams = user?.is_counselor ? allClassrooms : classrooms;
+
+            const filteredPracticeExams = practiceExams.filter(exam => {
+              if (selectedExamClassroomFilter !== 'ALL' && exam.classroom !== Number(selectedExamClassroomFilter)) {
+                return false;
+              }
+              if (selectedExamStudentFilter !== 'ALL' && exam.student !== Number(selectedExamStudentFilter)) {
+                return false;
+              }
+              if (examSearchQuery.trim()) {
+                const q = examSearchQuery.toLowerCase();
+                const studentObj = allUsers.find(u => u.id === exam.student);
+                const studentName = studentObj ? `${studentObj.first_name} ${studentObj.last_name} ${studentObj.username}`.toLowerCase() : '';
+                const classroomObj = allClassrooms.find(c => c.id === exam.classroom);
+                const classroomName = classroomObj ? classroomObj.name.toLowerCase() : '';
+                const titleName = exam.title.toLowerCase();
+                if (!titleName.includes(q) && !studentName.includes(q) && !classroomName.includes(q)) {
+                  return false;
+                }
+              }
+              return true;
+            });
+
+            const totalExamPages = Math.ceil(filteredPracticeExams.length / EXAMS_PER_PAGE);
+            const paginatedPracticeExams = filteredPracticeExams.slice(
+              (practiceExamsPage - 1) * EXAMS_PER_PAGE,
+              practiceExamsPage * EXAMS_PER_PAGE
+            );
+
+            // Filter student options for filter dropdown based on selected classroom
+            let studentOptions = allUsers.filter(u => u.role === 'STUDENT');
+            if (selectedExamClassroomFilter !== 'ALL') {
+              const selectedCl = allClassrooms.find(c => c.id === Number(selectedExamClassroomFilter));
+              if (selectedCl) {
+                const studentIds = selectedCl.students.map(s => s.id);
+                studentOptions = studentOptions.filter(s => studentIds.includes(s.id));
+              }
+            }
+
+            return (
+              <div className="exam-list-container flex-col" style={{ gap: '1.25rem' }}>
+                {/* Search and Filters */}
+                <div className="filters-card card flex-row" style={{ gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end', background: 'var(--bg-secondary)', padding: '1rem' }}>
+                  <div className="input-group" style={{ flex: 1, minWidth: '200px', marginBottom: 0 }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Arama</label>
+                    <input
+                      type="text"
+                      placeholder="Sınav adı veya öğrenci ara..."
+                      value={examSearchQuery}
+                      onChange={(e) => {
+                        setExamSearchQuery(e.target.value);
+                        setPracticeExamsPage(1);
+                      }}
+                    />
+                  </div>
+
+                  <div className="input-group" style={{ flex: 1, minWidth: '180px', marginBottom: 0 }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sınıf Filtresi</label>
+                    <select
+                      value={selectedExamClassroomFilter}
+                      onChange={(e) => {
+                        setSelectedExamClassroomFilter(e.target.value);
+                        setSelectedExamStudentFilter('ALL');
+                        setPracticeExamsPage(1);
+                      }}
+                    >
+                      <option value="ALL">-- Tüm Sınıflar --</option>
+                      {availableClassroomsForExams.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="input-group" style={{ flex: 1, minWidth: '180px', marginBottom: 0 }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Öğrenci Filtresi</label>
+                    <select
+                      value={selectedExamStudentFilter}
+                      onChange={(e) => {
+                        setSelectedExamStudentFilter(e.target.value);
+                        setPracticeExamsPage(1);
+                      }}
+                    >
+                      <option value="ALL">-- Tüm Öğrenciler --</option>
+                      {studentOptions.map(s => (
+                        <option key={s.id} value={s.id}>{`${s.first_name} ${s.last_name}`.trim() || s.username} ({s.username})</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                {examSubjects.map((sub, idx) => {
-                  const c = parseInt(String(sub.correct), 10);
-                  const inc = parseInt(String(sub.incorrect), 10);
-                  const net = (isNaN(c) ? 0 : c) - (isNaN(inc) ? 0 : inc) / 4;
-                  return (
-                    <div key={idx} className="subject-row flex-row" style={{ gap: '1rem', alignItems: 'flex-end', marginBottom: '1rem', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
-                      <div className="input-group" style={{ flex: 2, marginBottom: 0 }}>
-                        <label>Ders Adı</label>
-                        <input 
-                          type="text" 
-                          placeholder="Örn: Matematik" 
-                          value={sub.subject_name}
-                          onChange={(e) => handleUpdateExamSubject(idx, 'subject_name', e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                        <label>Doğru</label>
-                        <input 
-                          type="number" 
-                          min="0"
-                          value={sub.correct}
-                          onChange={(e) => handleUpdateExamSubject(idx, 'correct', e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                        <label>Yanlış</label>
-                        <input 
-                          type="number" 
-                          min="0"
-                          value={sub.incorrect}
-                          onChange={(e) => handleUpdateExamSubject(idx, 'incorrect', e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="net-display" style={{ padding: '0.75rem', background: 'var(--bg-primary)', borderRadius: '6px', textAlign: 'center', minWidth: '80px', fontWeight: 'bold' }}>
-                        {net.toFixed(2)} Net
-                      </div>
-                      {examSubjects.length > 1 && (
-                        <button type="button" className="danger-text" onClick={() => handleRemoveExamSubject(idx)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.75rem' }}>
-                          <X size={20} />
-                        </button>
+                {/* Exams Table */}
+                <div className="exams-table-card card">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Öğrenci</th>
+                        <th>Sınıf</th>
+                        <th>Sınav Adı</th>
+                        <th>Tarih</th>
+                        <th>Toplam Net</th>
+                        <th>İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedPracticeExams.map((exam) => {
+                        const studentObj = allUsers.find(u => u.id === exam.student);
+                        const studentFullName = studentObj ? `${studentObj.first_name} ${studentObj.last_name}`.trim() || studentObj.username : `Öğrenci #${exam.student}`;
+                        const classroomObj = allClassrooms.find(c => c.id === exam.classroom);
+                        const classroomName = classroomObj ? classroomObj.name : `Sınıf #${exam.classroom}`;
+
+                        return (
+                          <tr key={exam.id}>
+                            <td>
+                              <strong>{studentFullName}</strong>
+                              {studentObj?.username && <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>@{studentObj.username}</span>}
+                            </td>
+                            <td>{classroomName}</td>
+                            <td><strong>{exam.title}</strong></td>
+                            <td>{exam.date}</td>
+                            <td>
+                              <span style={{ padding: '4px 10px', background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary-color)', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                                {(exam.total_net ?? 0).toFixed(2)} Net
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  className="secondary btn-sm"
+                                  onClick={() => setSelectedExamForDetail(exam)}
+                                >
+                                  Detaylar
+                                </button>
+                                <button
+                                  className="danger btn-sm"
+                                  onClick={() => handleDeleteExam(exam.id!)}
+                                >
+                                  <X size={14} /> Sil
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {filteredPracticeExams.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="text-center" style={{ padding: '2rem' }}>
+                            Arama kriterlerinize uygun deneme sınavı sonucu bulunamadı.
+                          </td>
+                        </tr>
                       )}
-                    </div>
-                  );
-                })}
+                    </tbody>
+                  </table>
 
-                <div className="total-net-display flex-row" style={{ justifyContent: 'flex-end', marginTop: '1.5rem', fontSize: '1.2rem', fontWeight: 'bold' }}>
-                  Toplam Net: <span className="primary-text" style={{ marginLeft: '0.5rem' }}>{calculateExamTotalNet().toFixed(2)}</span>
+                  {totalExamPages > 1 && (
+                    <Pagination
+                      currentPage={practiceExamsPage}
+                      totalPages={totalExamPages}
+                      onPageChange={setPracticeExamsPage}
+                      totalItems={filteredPracticeExams.length}
+                      itemsPerPage={EXAMS_PER_PAGE}
+                    />
+                  )}
                 </div>
               </div>
+            );
+          })()}
 
-              <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <button type="submit" className="primary" disabled={savingExam}>
-                  {savingExam ? 'Kaydediliyor...' : 'Sınavı Kaydet'}
-                </button>
+          {/* SUB TAB 2: Yeni Sınav Sonucu Ekle Form */}
+          {examSubTab === 'CREATE' && (() => {
+            const availableClassroomsForCreate = user?.is_counselor ? allClassrooms : classrooms;
+            return (
+              <div className="exam-form-card card">
+                <h3 className="panel-title flex-row"><Award size={20} /> Sınav Sonucu Ekle</h3>
+                
+                <form onSubmit={handleSaveExam} className="exam-form flex-col" style={{ gap: '1.5rem', marginTop: '1rem' }}>
+                  <div className="form-row grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="input-group">
+                      <label>Sınıf Seçin</label>
+                      <select 
+                        value={examClassId} 
+                        onChange={(e) => {
+                          setExamClassId(e.target.value);
+                          setExamStudentId('');
+                        }}
+                        required
+                      >
+                        <option value="">-- Sınıf Seçin --</option>
+                        {availableClassroomsForCreate.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="input-group">
+                      <label>Öğrenci Seçin</label>
+                      <select 
+                        value={examStudentId} 
+                        onChange={(e) => setExamStudentId(e.target.value)}
+                        required
+                        disabled={!examClassId}
+                      >
+                        <option value="">-- Öğrenci Seçin --</option>
+                        {availableClassroomsForCreate.find(c => c.id === Number(examClassId))?.students.map(s => (
+                          <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.username})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="input-group">
+                      <label>Sınav Adı</label>
+                      <input 
+                        type="text" 
+                        placeholder="Örn: Türkiye Geneli Deneme 1" 
+                        value={examTitle} 
+                        onChange={(e) => setExamTitle(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="input-group">
+                      <label>Tarih</label>
+                      <input 
+                        type="date" 
+                        value={examDate} 
+                        onChange={(e) => setExamDate(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="subjects-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                    <div className="flex-row" style={{ justifyContent: 'space-between', marginBottom: '1rem' }}>
+                      <h4>Ders Netleri</h4>
+                      <button type="button" className="secondary btn-sm flex-row" onClick={handleAddExamSubject}>
+                        <PlusCircle size={14} /> Yeni Ders Ekle
+                      </button>
+                    </div>
+
+                    {examSubjects.map((sub, idx) => {
+                      const c = parseInt(String(sub.correct), 10);
+                      const inc = parseInt(String(sub.incorrect), 10);
+                      const net = (isNaN(c) ? 0 : c) - (isNaN(inc) ? 0 : inc) / 4;
+                      return (
+                        <div key={idx} className="subject-row flex-row" style={{ gap: '1rem', alignItems: 'flex-end', marginBottom: '1rem', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
+                          <div className="input-group" style={{ flex: 2, marginBottom: 0 }}>
+                            <label>Ders Adı</label>
+                            <input 
+                              type="text" 
+                              placeholder="Örn: Matematik" 
+                              value={sub.subject_name}
+                              onChange={(e) => handleUpdateExamSubject(idx, 'subject_name', e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+                            <label>Doğru</label>
+                            <input 
+                              type="number" 
+                              min="0"
+                              value={sub.correct}
+                              onChange={(e) => handleUpdateExamSubject(idx, 'correct', e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+                            <label>Yanlış</label>
+                            <input 
+                              type="number" 
+                              min="0"
+                              value={sub.incorrect}
+                              onChange={(e) => handleUpdateExamSubject(idx, 'incorrect', e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="net-display" style={{ padding: '0.75rem', background: 'var(--bg-primary)', borderRadius: '6px', textAlign: 'center', minWidth: '80px', fontWeight: 'bold' }}>
+                            {net.toFixed(2)} Net
+                          </div>
+                          {examSubjects.length > 1 && (
+                            <button type="button" className="danger-text" onClick={() => handleRemoveExamSubject(idx)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.75rem' }}>
+                              <X size={20} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    <div className="total-net-display flex-row" style={{ justifyContent: 'flex-end', marginTop: '1.5rem', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                      Toplam Net: <span className="primary-text" style={{ marginLeft: '0.5rem' }}>{calculateExamTotalNet().toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                    <button type="submit" className="primary" disabled={savingExam}>
+                      {savingExam ? 'Kaydediliyor...' : 'Sınavı Kaydet'}
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
+            );
+          })()}
+
         </div>
       )}
+
+      {/* Exam Subject Detail Modal — mounted on document.body via portal so it escapes all CSS overflow/transform containment */}
+      {selectedExamForDetail && createPortal((() => {
+        const studentObj = allUsers.find(u => u.id === selectedExamForDetail.student);
+        const studentFullName = studentObj ? `${studentObj.first_name} ${studentObj.last_name}`.trim() || studentObj.username : `Öğrenci #${selectedExamForDetail.student}`;
+        const classroomObj = allClassrooms.find(c => c.id === selectedExamForDetail.classroom);
+        const classroomName = classroomObj ? classroomObj.name : `Sınıf #${selectedExamForDetail.classroom}`;
+
+        return (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="exam-detail-title"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              background: 'rgba(0,0,0,0.15)',
+              zIndex: 9999,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '2rem',
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setSelectedExamForDetail(null); }}
+          >
+            <div
+              className="card"
+              style={{
+                width: '100%',
+                maxWidth: '860px',
+                maxHeight: '80vh',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '1.75rem',
+                borderRadius: '16px',
+                boxShadow: '0 24px 80px rgba(0,0,0,0.35)',
+                gap: '1.25rem'
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.85rem', borderBottom: '1px solid var(--border-color)' }}>
+                <h3 id="exam-detail-title" style={{ margin: 0, fontSize: '1.15rem' }}>Sınav Sonucu Detayları</h3>
+                <button
+                  onClick={() => setSelectedExamForDetail(null)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '6px', borderRadius: '6px' }}
+                  aria-label="Kapat"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body: two columns */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '1.5rem', alignItems: 'start' }}>
+
+                {/* Left — meta info */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', background: 'var(--bg-secondary)', padding: '1rem 1.1rem', borderRadius: '10px', fontSize: '0.93rem' }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{selectedExamForDetail.title}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', color: 'var(--text-secondary)' }}>
+                    <div><strong style={{ color: 'var(--text-primary)' }}>Öğrenci:</strong> {studentFullName}</div>
+                    <div><strong style={{ color: 'var(--text-primary)' }}>Sınıf:</strong> {classroomName}</div>
+                    <div><strong style={{ color: 'var(--text-primary)' }}>Tarih:</strong> {selectedExamForDetail.date}</div>
+                  </div>
+                  <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--bg-primary)', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Toplam Net</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-color)', lineHeight: 1 }}>{(selectedExamForDetail.total_net ?? 0).toFixed(2)}</div>
+                  </div>
+                </div>
+
+                {/* Right — subject scores table */}
+                <div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Ders Bazlı Sonuçlar</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-secondary)', borderRadius: '6px' }}>
+                        <th style={{ textAlign: 'left', padding: '0.55rem 0.75rem', fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Ders</th>
+                        <th style={{ textAlign: 'center', padding: '0.55rem 0.75rem', fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Doğru</th>
+                        <th style={{ textAlign: 'center', padding: '0.55rem 0.75rem', fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Yanlış</th>
+                        <th style={{ textAlign: 'center', padding: '0.55rem 0.75rem', fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Net</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedExamForDetail.subject_scores.map((sub, i) => (
+                        <tr key={sub.id || i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                          <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>{sub.subject_name}</td>
+                          <td style={{ padding: '0.6rem 0.75rem', textAlign: 'center', color: '#16a34a', fontWeight: 700 }}>{sub.correct}</td>
+                          <td style={{ padding: '0.6rem 0.75rem', textAlign: 'center', color: '#dc2626', fontWeight: 700 }}>{sub.incorrect}</td>
+                          <td style={{ padding: '0.6rem 0.75rem', textAlign: 'center', fontWeight: 700 }}>{(sub.net_score ?? (sub.correct - sub.incorrect / 4)).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <button className="primary" onClick={() => setSelectedExamForDetail(null)}>Kapat</button>
+              </div>
+            </div>
+          </div>
+        );
+      })(), document.body)}
 
     </div>
   );

@@ -33,11 +33,11 @@
   table-layout: fixed;
 }
 
-.users-table-card .admin-table th:nth-child(1) { width: 23%; }
-.users-table-card .admin-table th:nth-child(2) { width: 20%; }
-.users-table-card .admin-table th:nth-child(3) { width: 26%; }
-.users-table-card .admin-table th:nth-child(4) { width: 14%; }
-.users-table-card .admin-table th:nth-child(5) { width: 17%; text-align: right; padding-right: 1.5rem; }
+.users-table-card .admin-table th:nth-child(1) { width: 20%; }
+.users-table-card .admin-table th:nth-child(2) { width: 17%; }
+.users-table-card .admin-table th:nth-child(3) { width: 25%; }
+.users-table-card .admin-table th:nth-child(4) { width: 16%; }
+.users-table-card .admin-table th:nth-child(5) { width: 22%; text-align: left; padding-left: 0.75rem; }
 
 .schedules-table-card .admin-table th:nth-child(1) { width: 30%; }
 .schedules-table-card .admin-table th:nth-child(2) { width: 20%; }
@@ -65,8 +65,9 @@
 
 .admin-table td:last-child {
   overflow: visible;
-  text-align: right;
-  padding-right: 1.5rem;
+  text-align: left;
+  padding-left: 0.75rem;
+  vertical-align: middle;
 }
 
 .admin-table tr:last-child td {
